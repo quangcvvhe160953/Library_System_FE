@@ -3,21 +3,30 @@ package swp391.learning.application.service.Implements;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import swp391.learning.application.service.AuthenticationService;
 import swp391.learning.domain.dto.common.ResponseCommon;
+import swp391.learning.domain.dto.request.user.authentication.ChangePasswordRequest;
 import swp391.learning.domain.dto.request.user.authentication.CreateUserRequest;
+import swp391.learning.domain.dto.request.user.authentication.LogOutRequest;
 import swp391.learning.domain.dto.request.user.authentication.LoginRequest;
+import swp391.learning.domain.dto.response.user.authentication.ChangePasswordResponse;
 import swp391.learning.domain.dto.response.user.authentication.CreateUserResponseDTO;
+import swp391.learning.domain.dto.response.user.authentication.LogOutResponse;
 import swp391.learning.domain.entity.User;
 import swp391.learning.domain.enums.EnumTypeStatus;
 import swp391.learning.domain.enums.ResponseCode;
 import swp391.learning.repository.AuthenticationRepository;
+import swp391.learning.security.SecurityUtils;
 import swp391.learning.security.UserDetailsImpl;
 import swp391.learning.security.jwt.JWTResponse;
 import swp391.learning.security.jwt.JWTUtils;
 import swp391.learning.utils.CommonUtils;
 
+import javax.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Optional;
@@ -103,8 +112,49 @@ public class AuthenticationImpl implements AuthenticationService {
         }
     }
 
+    @Override
+    public ResponseCommon<LogOutResponse> logOut(LogOutRequest logOutRequest) {
+        try {
+            User user = authenticationRepository.findByUsername(logOutRequest.getUsername()).orElse(null);
+            if(!Objects.isNull(user)){
+                user.setSession_id(null);
+                authenticationRepository.save(user);
+                return new ResponseCommon<>(ResponseCode.SUCCESS.getCode(), "Logout successful", null);
+            } else {
+                return new ResponseCommon<>(ResponseCode.FAIL.getCode(), "Logout failed", null);
+            }
+        }catch (Exception e) {
+            e.printStackTrace();
+            log.error("Log out failed");
+            return new ResponseCommon<>(ResponseCode.FAIL.getCode(),"Log out failed",null);
+        }
+    }
 
-
+    @Override
+    public ResponseCommon<ChangePasswordResponse> changePassword(ChangePasswordRequest changePasswordRequest) {
+        try {
+            String username = SecurityUtils.getUsernameAuth();
+            System.out.println(username);
+            User user = authenticationRepository.findByUsername(username).orElse(null);
+            // if user is null -> tell error
+            log.debug("change password with username {}", username);
+            if (Objects.isNull(user)) {
+                return new ResponseCommon<>(ResponseCode.USER_NOT_FOUND, null);
+            } else {
+                // if oldPassword not correct -> tell user
+                if (!changePasswordRequest.getOldPassword().equals(user.getPassword())) {
+                    return new ResponseCommon<>(ResponseCode.PASSWORD_INCORRECT, null);
+                } else {
+                    user.setPassword(changePasswordRequest.getNewPassword());
+                    authenticationRepository.save(user);
+                    return new ResponseCommon<>(ResponseCode.SUCCESS, null);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseCommon<>(new ChangePasswordResponse("Error"));
+        }
+    }
 
 
 

@@ -10,11 +10,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import swp391.learning.application.service.AuthenticationService;
 import swp391.learning.domain.dto.common.ResponseCommon;
+import swp391.learning.domain.dto.request.user.authentication.ChangePasswordRequest;
 import swp391.learning.domain.dto.request.user.authentication.CreateUserRequest;
+import swp391.learning.domain.dto.request.user.authentication.LogOutRequest;
 import swp391.learning.domain.dto.request.user.authentication.LoginRequest;
+import swp391.learning.domain.dto.response.user.authentication.ChangePasswordResponse;
 import swp391.learning.domain.dto.response.user.authentication.CreateUserResponseDTO;
+import swp391.learning.domain.dto.response.user.authentication.LogOutResponse;
 import swp391.learning.domain.enums.ResponseCode;
+import swp391.learning.security.SecurityUtils;
 import swp391.learning.security.jwt.JWTResponse;
+
+import javax.validation.Valid;
 
 @RestController
 @RequestMapping("/api/v1/user")
@@ -43,6 +50,29 @@ public class AuthenticationController {
         }
         else {
             return ResponseEntity.badRequest().body(new ResponseCommon<>(ResponseCode.FAIL.getCode(),"Login fail",null));
+        }
+    }
+
+    @PostMapping("/log-out")
+    public ResponseEntity<ResponseCommon<LogOutResponse>> logOut(LogOutRequest logOutRequest){
+        ResponseCommon<LogOutResponse> response = authenticationService.logOut(logOutRequest);
+        if(response.getCode()==ResponseCode.FAIL.getCode()){
+            return ResponseEntity.badRequest().body(new ResponseCommon<>(ResponseCode.FAIL.getCode(),"LogOut fail",null));
+        } else {
+            return ResponseEntity.ok().body(new ResponseCommon<>(ResponseCode.SUCCESS.getCode(),"LogOut success",response.getData()));
+        }
+    }
+
+    @PostMapping("/changePassword")
+    public ResponseEntity<ResponseCommon<ChangePasswordResponse>> changePassword(@Valid @RequestBody ChangePasswordRequest changePasswordRequest) {
+        ResponseCommon<ChangePasswordResponse> response = authenticationService.changePassword(changePasswordRequest);
+        String username = SecurityUtils.getUsernameAuth();
+        System.out.println(username);
+        if (response.getCode() == ResponseCode.SUCCESS.getCode()) {
+            return ResponseEntity.ok(response);
+        }
+        else {
+            return ResponseEntity.badRequest().body(response);
         }
     }
 }
