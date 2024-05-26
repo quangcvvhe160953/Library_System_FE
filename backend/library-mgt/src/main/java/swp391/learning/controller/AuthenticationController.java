@@ -11,7 +11,10 @@ import org.springframework.web.bind.annotation.RestController;
 import swp391.learning.application.service.AuthenticationService;
 import swp391.learning.domain.dto.common.ResponseCommon;
 import swp391.learning.domain.dto.request.user.authentication.CreateUserRequest;
+import swp391.learning.domain.dto.request.user.authentication.LoginRequest;
 import swp391.learning.domain.dto.response.user.authentication.CreateUserResponseDTO;
+import swp391.learning.domain.enums.ResponseCode;
+import swp391.learning.security.jwt.JWTResponse;
 
 @RestController
 @RequestMapping("/api/v1/user")
@@ -26,5 +29,20 @@ public class AuthenticationController {
         log.debug("Create user with email", requestDTO.getEmail());
         ResponseCommon<CreateUserResponseDTO> responseDTO = authenticationService.createUser(requestDTO);
         return ResponseEntity.ok(responseDTO);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<ResponseCommon<JWTResponse>> login(@RequestBody LoginRequest loginRequest) {
+        ResponseCommon<JWTResponse> response = authenticationService.login(loginRequest);
+        if (response.getCode() == ResponseCode.SUCCESS.getCode()) {
+            return ResponseEntity.ok(response);
+        } else if(response.getCode()==ResponseCode.USER_NOT_FOUND.getCode()){
+            return ResponseEntity.badRequest().body(new ResponseCommon<>(ResponseCode.USER_NOT_FOUND.getCode(),"Account not register in system",null));
+        } else if(response.getCode() ==ResponseCode.PASSWORD_INCORRECT.getCode()){
+            return ResponseEntity.badRequest().body(new ResponseCommon<>(ResponseCode.PASSWORD_INCORRECT.getCode(),"Username or password incorrect",null));
+        }
+        else {
+            return ResponseEntity.badRequest().body(new ResponseCommon<>(ResponseCode.FAIL.getCode(),"Login fail",null));
+        }
     }
 }

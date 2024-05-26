@@ -7,11 +7,16 @@ import org.springframework.stereotype.Service;
 import swp391.learning.application.service.AuthenticationService;
 import swp391.learning.domain.dto.common.ResponseCommon;
 import swp391.learning.domain.dto.request.user.authentication.CreateUserRequest;
+import swp391.learning.domain.dto.request.user.authentication.LoginRequest;
 import swp391.learning.domain.dto.response.user.authentication.CreateUserResponseDTO;
 import swp391.learning.domain.entity.User;
 import swp391.learning.domain.enums.EnumTypeStatus;
 import swp391.learning.domain.enums.ResponseCode;
 import swp391.learning.repository.AuthenticationRepository;
+import swp391.learning.security.UserDetailsImpl;
+import swp391.learning.security.jwt.JWTResponse;
+import swp391.learning.security.jwt.JWTUtils;
+import swp391.learning.utils.CommonUtils;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -74,34 +79,33 @@ public class AuthenticationImpl implements AuthenticationService {
         String result = username + randomNumber.toString();
         return result;
     }
-}
-@Override
-public ResponseCommon<JWTResponse> login(LoginRequest loginRequest) {
-    try {
-        Optional<User> user = userRepository.findByEmail(loginRequest.getUsername());
-        // if username request not found in database -> tell user
-        if(user.isEmpty()){
-            return new ResponseCommon<>(ResponseCode.USER_NOT_FOUND,null);
-        } // else -> check password
-        else {
-            String hashPass = passwordService.hashPassword(loginRequest.getPassword());
-            // if password not equals password in database -> return fail
-            if (!user.orElse(null).getPassword().equals(hashPass)) {
-                return new ResponseCommon<>(ResponseCode.PASSWORD_INCORRECT, null);
-            } // else -> verify otp
+
+    @Override
+    public ResponseCommon<JWTResponse> login(LoginRequest loginRequest) {
+        try {
+            Optional<User> user = authenticationRepository.findByEmail(loginRequest.getUsername());
+            // if username request not found in database -> tell user
+            if (user.isEmpty()) {
+                return new ResponseCommon<>(ResponseCode.USER_NOT_FOUND, null);
+            } // else -> check password
             else {
                 JWTUtils utils = new JWTUtils();
                 UserDetailsImpl userDetails = UserDetailsImpl.build(user.get());
                 String accessToken = utils.generateAccessToken(userDetails);
                 String refreshToken = utils.generateRefreshToken(userDetails);
                 user.orElse(null).setSession_id(CommonUtils.getSessionID());
-                userRepository.save(user.get());
+                authenticationRepository.save(user.get());
                 return new ResponseCommon<>(new JWTResponse(accessToken, refreshToken, ResponseCode.SUCCESS.getMessage()));
-//
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseCommon<>(ResponseCode.FAIL, null);
         }
-    } catch (Exception e){
-        e.printStackTrace();
-        return new ResponseCommon<>(ResponseCode.FAIL, null);
     }
+
+
+
+
+
+
 }
