@@ -28,6 +28,7 @@ import java.util.*;
 public class AuthenticationImpl implements AuthenticationService {
     private final AuthenticationRepository authenticationRepository;
     private  final EmailService emailService;
+    private final PasswordService passwordService;
     private final Logger log = LoggerFactory.getLogger(AuthenticationService.class);
 
     @Value("${mail.sender}")
@@ -48,7 +49,8 @@ public class AuthenticationImpl implements AuthenticationService {
             }
             // Thiết lập thông tin người dùng
             user.setUsername(genUserFromEmail(requestDTO.getEmail()));
-            user.setPassword(requestDTO.getPassword());
+            String hassPass = passwordService.hashPassword(requestDTO.getPassword());
+            user.setPassword(hassPass);
             user.setEmail(requestDTO.getEmail());
             user.setPhone(requestDTO.getPhone());
             user.setRole(requestDTO.getRole());
