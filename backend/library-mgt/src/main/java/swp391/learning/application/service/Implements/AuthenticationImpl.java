@@ -27,7 +27,7 @@ import java.util.*;
 @RequiredArgsConstructor
 public class AuthenticationImpl implements AuthenticationService {
     private final AuthenticationRepository authenticationRepository;
-    private  final EmailService emailService;
+    private final EmailService emailService;
     private final PasswordService passwordService;
     private final Logger log = LoggerFactory.getLogger(AuthenticationService.class);
 
@@ -35,6 +35,7 @@ public class AuthenticationImpl implements AuthenticationService {
     private String sendmail;
     @Value("${otp.valid.minutes}")
     private int otpValid;
+
     @Override
     public ResponseCommon<CreateUserResponseDTO> createUser(CreateUserRequest requestDTO) {
         try {
@@ -93,21 +94,27 @@ public class AuthenticationImpl implements AuthenticationService {
             // if username request not found in database -> tell user
             if (user.isEmpty()) {
                 return new ResponseCommon<>(ResponseCode.USER_NOT_FOUND, null);
-            } // else -> check password
-            else {
-                JWTUtils utils = new JWTUtils();
-                UserDetailsImpl userDetails = UserDetailsImpl.build(user.get());
-                String accessToken = utils.generateAccessToken(userDetails);
-                String refreshToken = utils.generateRefreshToken(userDetails);
-                user.orElse(null).setSession_id(CommonUtils.getSessionID());
-                authenticationRepository.save(user.get());
-                return new ResponseCommon<>(new JWTResponse(accessToken, refreshToken, ResponseCode.SUCCESS.getMessage()));
+            } else {// else -> check password
+                String hashPass = passwordService.hashPassword(loginRequest.getPassword());
+                // if password not equals password in database -> return fail
+                if (!user.orElse(null).getPassword().equals(hashPass)) {
+                    return new ResponseCommon<>(ResponseCode.PASSWORD_INCORRECT, null);
+                } else {// else -> verify otp
+                    JWTUtils utils = new JWTUtils();
+                    UserDetailsImpl userDetails = UserDetailsImpl.build(user.get());
+                    String accessToken = utils.generateAccessToken(userDetails);
+                    String refreshToken = utils.generateRefreshToken(userDetails);
+                    user.orElse(null).setSession_id(CommonUtils.getSessionID());
+                    authenticationRepository.save(user.get());
+                    return new ResponseCommon<>(new JWTResponse(accessToken, refreshToken, ResponseCode.SUCCESS.getMessage()));
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
             return new ResponseCommon<>(ResponseCode.FAIL, null);
         }
     }
+
 
     @Override
     public ResponseCommon<LogOutResponse> logOut(LogOutRequest logOutRequest) {
@@ -138,13 +145,14 @@ public class AuthenticationImpl implements AuthenticationService {
             if (Objects.isNull(user)) {
                 return new ResponseCommon<>(ResponseCode.USER_NOT_FOUND, null);
             } else {
+                String hassPass = passwordService.hashPassword(changePasswordRequest.getNewPassword());
                 // if oldPassword not correct -> tell user
-                if (!changePasswordRequest.getOldPassword().equals(user.getPassword())) {
-                    return new ResponseCommon<>(ResponseCode.PASSWORD_INCORRECT, null);
+                if(!passwordService.hashPassword(changePasswordRequest.getOldPassword()).equals(user.getPassword())){
+                    return new ResponseCommon<>(ResponseCode.PASSWORD_INCORRECT,null);
                 } else {
-                    user.setPassword(changePasswordRequest.getNewPassword());
+                    user.setPassword(hassPass);
                     authenticationRepository.save(user);
-                    return new ResponseCommon<>(ResponseCode.SUCCESS, null);
+                    return new ResponseCommon<>(ResponseCode.SUCCESS,null);
                 }
             }
         } catch (Exception e) {
@@ -246,12 +254,12 @@ public class AuthenticationImpl implements AuthenticationService {
             String otp = CommonUtils.getOTP();
             //step2: send email
             log.info("START... Sending email");
-            emailService.sendEmail(setUpMail(user.getEmail(),otp));
+            emailService.sendEmail(setUpMail(user.getEmail(), otp));
             log.info("END... Email sent success");
             user.setUsername(genUserFromEmail(request.getEmail()));
 
             LocalDateTime expired = localDateTime.plusMinutes(Long.valueOf(otpValid));
-            log.debug("Value of expired{}",expired);
+            log.debug("Value of expired{}", expired);
             user.setExpiredOTP(expired);
             user.setOtp(otp);
             authenticationRepository.save(user);
