@@ -13,5 +13,8 @@ public class CommonUtils {
     public static Integer getSessionID() {
         return random.nextInt();
     }
+    public static String getOTP() {
+        return new DecimalFormat("000000").format(random.nextInt(999999));
+    }
 
 }

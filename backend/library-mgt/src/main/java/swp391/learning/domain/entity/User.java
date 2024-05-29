@@ -34,31 +34,37 @@ public class User {
     private String email;
 
     @Column(name = "phone")
-    private String phone;
+    private String phone; // số điện thoại
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role")
     private EnumTypeRole role;
 
     @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    private LocalDateTime createdAt; // ngày tạo
 
     @Column(name = "full_name")
-    private String fullName;
+    private String fullName; // tên
 
     @Enumerated(EnumType.STRING)
     @Column(name = "gender")
-    private EnumTypeGender gender;
+    private EnumTypeGender gender; // giới tính
 
     @Column(name = "date_of_birth")
-    private LocalDate date_of_birth;
+    private LocalDate date_of_birth; // ngaỳ sinh
 
     @Enumerated(EnumType.STRING)
-    private EnumTypeStatus status;
+    private EnumTypeStatus status; // các trạng thái của tài khoản 1 đã kích hoạt 2 chưa verify
 
     @Column(name="session_id")
-    private Integer session_id;
+    private Integer session_id; // thời gian đăng nhập
 
     @Column(name="updated_at")
-    private LocalDateTime updatedAt;
+    private LocalDateTime updatedAt; // thời gian cập nhật
+
+    @Column(name = "otp")
+    private String otp; // ma otp
+
+    @Column(name = "expired_otp")
+    private LocalDateTime expiredOTP; // thời gian otp
 }

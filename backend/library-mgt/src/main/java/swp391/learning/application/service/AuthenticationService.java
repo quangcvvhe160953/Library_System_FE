@@ -1,13 +1,9 @@
 package swp391.learning.application.service;
 
 import swp391.learning.domain.dto.common.ResponseCommon;
-import swp391.learning.domain.dto.request.user.authentication.ChangePasswordRequest;
-import swp391.learning.domain.dto.request.user.authentication.CreateUserRequest;
-import swp391.learning.domain.dto.request.user.authentication.LogOutRequest;
-import swp391.learning.domain.dto.request.user.authentication.LoginRequest;
-import swp391.learning.domain.dto.response.user.authentication.ChangePasswordResponse;
-import swp391.learning.domain.dto.response.user.authentication.CreateUserResponseDTO;
-import swp391.learning.domain.dto.response.user.authentication.LogOutResponse;
+import swp391.learning.domain.dto.request.user.authentication.*;
+import swp391.learning.domain.dto.response.user.authentication.*;
+import swp391.learning.domain.entity.User;
 import swp391.learning.security.jwt.JWTResponse;
 
 public interface AuthenticationService {
@@ -18,6 +14,15 @@ public interface AuthenticationService {
     ResponseCommon<JWTResponse> login(LoginRequest loginRequest);
 
     ResponseCommon<LogOutResponse> logOut(LogOutRequest logOutRequest);
+
     ResponseCommon<ChangePasswordResponse> changePassword(ChangePasswordRequest changePasswordRequest);
+
+    ResponseCommon<VerifyOtpResponse> verifyOtp(VerifyOtpRequest verifyOtpRequest);
+
+    User updateUser(User user);
+
+    ResponseCommon<GetOTPResponse> getOtp(GetOTPRequest request);
+
+    ResponseCommon<ResendOTPResponse> resendOTP(ResendOTPRequest request);
 
 }

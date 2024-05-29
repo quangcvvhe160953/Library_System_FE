@@ -1,11 +1,11 @@
 package swp391.learning.domain.dto.request.user.authentication;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.antlr.v4.runtime.misc.NotNull;
-import org.springframework.format.annotation.DateTimeFormat;
 import swp391.learning.domain.enums.EnumTypeGender;
 import swp391.learning.domain.enums.EnumTypeRole;
 
@@ -23,13 +23,13 @@ public class CreateUserRequest {
     private String email;
     @NotBlank
     private String phone;
-
     private EnumTypeRole role = EnumTypeRole.MEMBER;
+    @NotNull
     private String fullName;
     @NotNull
     private EnumTypeGender gender;
     @NotNull
-    @DateTimeFormat(pattern = "dd/MM/yyyy")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
     private LocalDate dateOfBirth;
 
 
