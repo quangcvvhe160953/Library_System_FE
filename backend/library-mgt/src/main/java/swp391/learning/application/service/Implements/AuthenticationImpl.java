@@ -6,13 +6,16 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import swp391.learning.application.service.AuthenticationService;
 import swp391.learning.domain.dto.common.ResponseCommon;
+import swp391.learning.domain.dto.request.user.authentication.ChangePasswordRequest;
 import swp391.learning.domain.dto.request.user.authentication.CreateUserRequest;
 import swp391.learning.domain.dto.request.user.authentication.LoginRequest;
+import swp391.learning.domain.dto.response.user.authentication.ChangePasswordResponse;
 import swp391.learning.domain.dto.response.user.authentication.CreateUserResponseDTO;
 import swp391.learning.domain.entity.User;
 import swp391.learning.domain.enums.EnumTypeStatus;
 import swp391.learning.domain.enums.ResponseCode;
 import swp391.learning.repository.AuthenticationRepository;
+import swp391.learning.security.SecurityUtils;
 import swp391.learning.security.UserDetailsImpl;
 import swp391.learning.security.jwt.JWTResponse;
 import swp391.learning.security.jwt.JWTUtils;
@@ -41,7 +44,6 @@ public class AuthenticationImpl implements AuthenticationService {
             if (Objects.isNull(user)) {
                 user = new User();
             }
-
             // Thiết lập thông tin người dùng
             user.setUsername(genUserFromEmail(requestDTO.getEmail()));
             user.setPassword(requestDTO.getPassword());
@@ -59,7 +61,6 @@ public class AuthenticationImpl implements AuthenticationService {
             responseDTO.setUsername(createdUser.getUsername());
             responseDTO.setEmail(createdUser.getEmail());
             responseDTO.setCreatedAt(createdUser.getCreatedAt());
-
             return new ResponseCommon<>(ResponseCode.SUCCESS, responseDTO);
         } catch (Exception e) {
             log.error("create user fail", e);
@@ -83,7 +84,7 @@ public class AuthenticationImpl implements AuthenticationService {
     @Override
     public ResponseCommon<JWTResponse> login(LoginRequest loginRequest) {
         try {
-            Optional<User> user = authenticationRepository.findByEmail(loginRequest.getUsername());
+            Optional<User> user = authenticationRepository.findByEmail(loginRequest.getEmail());
             // if username request not found in database -> tell user
             if (user.isEmpty()) {
                 return new ResponseCommon<>(ResponseCode.USER_NOT_FOUND, null);
@@ -95,7 +96,7 @@ public class AuthenticationImpl implements AuthenticationService {
                 String refreshToken = utils.generateRefreshToken(userDetails);
                 user.orElse(null).setSession_id(CommonUtils.getSessionID());
                 authenticationRepository.save(user.get());
-                return new ResponseCommon<>(new JWTResponse(accessToken, refreshToken, ResponseCode.SUCCESS.getMessage()));
+                return new ResponseCommon<>(ResponseCode.SUCCESS,new JWTResponse(accessToken, refreshToken, ResponseCode.SUCCESS.getMessage()));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -103,9 +104,30 @@ public class AuthenticationImpl implements AuthenticationService {
         }
     }
 
-
-
-
-
+    @Override
+    public ResponseCommon<ChangePasswordResponse> changePassword(ChangePasswordRequest changePasswordRequest) {
+        try {
+            String username = SecurityUtils.getUsernameAuth();
+            System.out.println(username);
+            User user = authenticationRepository.findByUsername(username).orElse(null);
+            // if user is null -> tell error
+            log.debug("change password with username {}", username);
+            if (Objects.isNull(user)) {
+                return new ResponseCommon<>(ResponseCode.USER_NOT_FOUND, null);
+            } else {
+                // if oldPassword not correct -> tell user
+                if (!changePasswordRequest.getOldPassword().equals(user.getPassword())) {
+                    return new ResponseCommon<>(ResponseCode.PASSWORD_INCORRECT, null);
+                } else {
+                    user.setPassword(changePasswordRequest.getNewPassword());
+                    authenticationRepository.save(user);
+                    return new ResponseCommon<>(ResponseCode.SUCCESS, null);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseCommon<>(new ChangePasswordResponse("Error"));
+        }
+    }
 
 }

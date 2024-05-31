@@ -10,11 +10,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import swp391.learning.application.service.AuthenticationService;
 import swp391.learning.domain.dto.common.ResponseCommon;
+import swp391.learning.domain.dto.request.user.authentication.ChangePasswordRequest;
 import swp391.learning.domain.dto.request.user.authentication.CreateUserRequest;
 import swp391.learning.domain.dto.request.user.authentication.LoginRequest;
+import swp391.learning.domain.dto.response.user.authentication.ChangePasswordResponse;
 import swp391.learning.domain.dto.response.user.authentication.CreateUserResponseDTO;
 import swp391.learning.domain.enums.ResponseCode;
+import swp391.learning.security.SecurityUtils;
 import swp391.learning.security.jwt.JWTResponse;
+
+import javax.validation.Valid;
 
 @RestController
 @RequestMapping("/api/v1/user")
@@ -36,13 +41,24 @@ public class AuthenticationController {
         ResponseCommon<JWTResponse> response = authenticationService.login(loginRequest);
         if (response.getCode() == ResponseCode.SUCCESS.getCode()) {
             return ResponseEntity.ok(response);
-        } else if(response.getCode()==ResponseCode.USER_NOT_FOUND.getCode()){
-            return ResponseEntity.badRequest().body(new ResponseCommon<>(ResponseCode.USER_NOT_FOUND.getCode(),"Account not register in system",null));
-        } else if(response.getCode() ==ResponseCode.PASSWORD_INCORRECT.getCode()){
-            return ResponseEntity.badRequest().body(new ResponseCommon<>(ResponseCode.PASSWORD_INCORRECT.getCode(),"Username or password incorrect",null));
+        } else if (response.getCode() == ResponseCode.USER_NOT_FOUND.getCode()) {
+            return ResponseEntity.badRequest().body(new ResponseCommon<>(ResponseCode.USER_NOT_FOUND.getCode(), "Account not register in system", null));
+        } else if (response.getCode() == ResponseCode.PASSWORD_INCORRECT.getCode()) {
+            return ResponseEntity.badRequest().body(new ResponseCommon<>(ResponseCode.PASSWORD_INCORRECT.getCode(), "Username or password incorrect", null));
+        } else {
+            return ResponseEntity.badRequest().body(new ResponseCommon<>(ResponseCode.FAIL.getCode(), "Login fail", null));
         }
-        else {
-            return ResponseEntity.badRequest().body(new ResponseCommon<>(ResponseCode.FAIL.getCode(),"Login fail",null));
+    }
+
+    @PostMapping("/changePassword")
+    public ResponseEntity<ResponseCommon<ChangePasswordResponse>> changePassword(@Valid @RequestBody ChangePasswordRequest changePasswordRequest) {
+        ResponseCommon<ChangePasswordResponse> response = authenticationService.changePassword(changePasswordRequest);
+        String username = SecurityUtils.getUsernameAuth();
+        System.out.println(username);
+        if (response.getCode() == ResponseCode.SUCCESS.getCode()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(response);
         }
     }
 }

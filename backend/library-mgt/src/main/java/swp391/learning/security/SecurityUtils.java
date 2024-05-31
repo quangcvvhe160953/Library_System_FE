@@ -9,3 +9,4 @@ public class SecurityUtils {
         return (String) authentication.getPrincipal();
     }
 }
+

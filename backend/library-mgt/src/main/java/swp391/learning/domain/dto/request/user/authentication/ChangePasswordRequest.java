@@ -2,6 +2,7 @@ package swp391.learning.domain.dto.request.user.authentication;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.validation.constraints.NotBlank;
@@ -9,10 +10,13 @@ import javax.validation.constraints.NotBlank;
 @Getter
 @Setter
 @AllArgsConstructor
-public class LoginRequest {
+@NoArgsConstructor
+public class ChangePasswordRequest {
     @NotBlank
-    private String email;
+    private String oldPassword;
     @NotBlank
-    private String password;
+    private String newPassword;
+    @NotBlank
+    private String reNewPassword;
 
 }
