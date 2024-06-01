@@ -30,6 +30,7 @@ import java.util.Random;
 @RequiredArgsConstructor
 public class AuthenticationImpl implements AuthenticationService {
     private final AuthenticationRepository authenticationRepository;
+    private final PasswordService passwordService;
     private final Logger log = LoggerFactory.getLogger(AuthenticationService.class);
 
     @Override
@@ -46,7 +47,10 @@ public class AuthenticationImpl implements AuthenticationService {
             }
             // Thiết lập thông tin người dùng
             user.setUsername(genUserFromEmail(requestDTO.getEmail()));
-            user.setPassword(requestDTO.getPassword());
+
+            String hassPass = passwordService.hashPassword(requestDTO.getPassword());
+            user.setPassword(hassPass);
+
             user.setEmail(requestDTO.getEmail());
             user.setPhone(requestDTO.getPhone());
             user.setRole(requestDTO.getRole());
@@ -88,15 +92,20 @@ public class AuthenticationImpl implements AuthenticationService {
             // if username request not found in database -> tell user
             if (user.isEmpty()) {
                 return new ResponseCommon<>(ResponseCode.USER_NOT_FOUND, null);
-            } // else -> check password
-            else {
-                JWTUtils utils = new JWTUtils();
-                UserDetailsImpl userDetails = UserDetailsImpl.build(user.get());
-                String accessToken = utils.generateAccessToken(userDetails);
-                String refreshToken = utils.generateRefreshToken(userDetails);
-                user.orElse(null).setSession_id(CommonUtils.getSessionID());
-                authenticationRepository.save(user.get());
-                return new ResponseCommon<>(ResponseCode.SUCCESS,new JWTResponse(accessToken, refreshToken, ResponseCode.SUCCESS.getMessage()));
+            } else {// else -> check password
+                String hashPass = passwordService.hashPassword(loginRequest.getPassword());
+                // if password not equals password in database -> return fail
+                if (!user.orElse(null).getPassword().equals(hashPass)) {
+                    return new ResponseCommon<>(ResponseCode.PASSWORD_INCORRECT, null);
+                } else {// else -> verify otp
+                    JWTUtils utils = new JWTUtils();
+                    UserDetailsImpl userDetails = UserDetailsImpl.build(user.get());
+                    String accessToken = utils.generateAccessToken(userDetails);
+                    String refreshToken = utils.generateRefreshToken(userDetails);
+                    user.orElse(null).setSession_id(CommonUtils.getSessionID());
+                    authenticationRepository.save(user.get());
+                    return new ResponseCommon<>(ResponseCode.SUCCESS, new JWTResponse(accessToken, refreshToken, ResponseCode.SUCCESS.getMessage()));
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
