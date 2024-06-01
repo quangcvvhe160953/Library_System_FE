@@ -1,9 +1,21 @@
-import React from 'react'
-import { Form, Button } from 'react-bootstrap';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // Import navigate từ react-router-dom
 import '../assets/style/Verify.css';
 import Logo from '../assets/image/logo.png';
 
 const VerifySuccess = () => {
+  const navigate = useNavigate();
+  useEffect(() => {
+    // Kiểm tra xác minh thành công ở đây, có thể dựa vào một state hoặc các điều kiện khác
+    const isVerified = true; // Ví dụ: giả định đã xác minh thành công
+
+    // Nếu xác minh thành công, thực hiện chuyển hướng bằng navigate
+    if (isVerified) {
+      // Sử dụng navigate
+      navigate("/");
+    }
+  }, []);
+
   return (
     <div className="verify-container">
       <div className="verify">
@@ -21,7 +33,7 @@ const VerifySuccess = () => {
         <a className="btn-login" href="#">Login</a>
       </div>
     </div>
-  )
+  );
 }
 
-export default VerifySuccess
+export default VerifySuccess;
