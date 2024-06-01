@@ -57,8 +57,14 @@ public class User {
     private EnumTypeStatus status;
 
     @Column(name="session_id")
-    private Integer session_id;
+    private Integer session_id; // phien de check moi lan dang nhap
 
     @Column(name="updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "otp")
+    private String otp; // ma otp
+
+    @Column(name = "expired_otp")
+    private LocalDateTime expiredOTP; // thời gian otp
 }

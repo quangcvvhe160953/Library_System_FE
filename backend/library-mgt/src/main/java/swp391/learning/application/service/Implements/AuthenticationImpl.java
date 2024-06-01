@@ -3,14 +3,13 @@ package swp391.learning.application.service.Implements;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import swp391.learning.application.service.AuthenticationService;
 import swp391.learning.domain.dto.common.ResponseCommon;
-import swp391.learning.domain.dto.request.user.authentication.ChangePasswordRequest;
-import swp391.learning.domain.dto.request.user.authentication.CreateUserRequest;
-import swp391.learning.domain.dto.request.user.authentication.LoginRequest;
-import swp391.learning.domain.dto.response.user.authentication.ChangePasswordResponse;
-import swp391.learning.domain.dto.response.user.authentication.CreateUserResponseDTO;
+import swp391.learning.domain.dto.request.user.authentication.*;
+import swp391.learning.domain.dto.response.user.authentication.*;
+import swp391.learning.domain.entity.Mail;
 import swp391.learning.domain.entity.User;
 import swp391.learning.domain.enums.EnumTypeStatus;
 import swp391.learning.domain.enums.ResponseCode;
@@ -22,15 +21,18 @@ import swp391.learning.security.jwt.JWTUtils;
 import swp391.learning.utils.CommonUtils;
 
 import java.time.LocalDateTime;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 public class AuthenticationImpl implements AuthenticationService {
     private final AuthenticationRepository authenticationRepository;
     private final PasswordService passwordService;
+    private  final EmailService emailService;
+    @Value("${mail.sender}")
+    private String sendmail;
+    @Value("${otp.valid.minutes}")
+    private int otpValid;
     private final Logger log = LoggerFactory.getLogger(AuthenticationService.class);
 
     @Override
@@ -46,7 +48,7 @@ public class AuthenticationImpl implements AuthenticationService {
                 user = new User();
             }
             // Thiết lập thông tin người dùng
-            user.setUsername(genUserFromEmail(requestDTO.getEmail()));
+            user.setUsername(getUserFromEmail(requestDTO.getEmail()));
 
             String hassPass = passwordService.hashPassword(requestDTO.getPassword());
             user.setPassword(hassPass);
@@ -73,7 +75,7 @@ public class AuthenticationImpl implements AuthenticationService {
     }
 
     @Override
-    public String genUserFromEmail(String email) {
+    public String getUserFromEmail(String email) {
         String username = email.substring(0, email.indexOf("@"));
         Random random = new Random();
         StringBuilder randomNumber = new StringBuilder();
@@ -83,6 +85,40 @@ public class AuthenticationImpl implements AuthenticationService {
         }
         String result = username + randomNumber.toString();
         return result;
+    }
+
+    @Override
+    public ResponseCommon<GetUserByEmailResponse> getUserByEmail(GetUserByEmailRequest getUserByEmailRequest) {
+        try {
+            User user = authenticationRepository.findByEmail(getUserByEmailRequest.getEmail()).orElse(null);
+            // If user in database not exist -> tell user
+            if ( Objects.isNull(user) ) {
+                log.debug("User not exist");
+                return new ResponseCommon<>(ResponseCode.USER_NOT_FOUND.getCode(),"User not exist",null);
+            }
+            else {
+                GetUserByEmailResponse response = new GetUserByEmailResponse();
+
+                response.setId(user.getId());
+                response.setUsername(user.getUsername());
+                response.setEmail(user.getEmail());
+                response.setPhone(user.getPhone());
+                response.setRole(user.getRole());
+                response.setCreatedAt(user.getCreatedAt());
+                response.setFullName(user.getFullName());
+                response.setGender(user.getGender());
+                response.setDate_of_birth(user.getDate_of_birth());
+                response.setStatus(user.getStatus());
+
+                log.debug("Get user by email successfully");
+                return new ResponseCommon<>(ResponseCode.SUCCESS.getCode(), "Get user by email success", response);
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            log.error("Get user by email failed");
+            return new ResponseCommon<>(ResponseCode.FAIL.getCode(),"Get user by email failed",null);
+        }
     }
 
     @Override
@@ -139,4 +175,123 @@ public class AuthenticationImpl implements AuthenticationService {
         }
     }
 
+    @Override
+    public ResponseCommon<VerifyOtpResponse> verifyOtp(VerifyOtpRequest verifyOtpRequest) {
+        try {
+            User user = authenticationRepository.findByEmail(verifyOtpRequest.getEmail()).orElse(null);
+
+            if (Objects.isNull(user)) {
+                return new ResponseCommon<>(ResponseCode.USER_NOT_FOUND, null);
+            }
+
+            LocalDateTime localDateTime = LocalDateTime.now();
+            LocalDateTime expiredOTP = user.getExpiredOTP();
+            String otp = user.getOtp();
+
+            if (localDateTime.isAfter(expiredOTP)) {
+                // Trường hợp OTP đã hết hạn
+                return new ResponseCommon<>(ResponseCode.Expired_OTP, null);
+            } else if (verifyOtpRequest.getOtp().equals(otp)) {
+                // Trường hợp OTP đúng
+                return new ResponseCommon<>(ResponseCode.SUCCESS, null);
+            } else {
+                // Trường hợp OTP sai
+                return new ResponseCommon<>(ResponseCode.OTP_INCORRECT, null);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseCommon<>(ResponseCode.FAIL, null);
+        }
+    }
+
+    @Override
+    public User updateUser(User user) {
+        try {
+            Optional<User> existingUser = authenticationRepository.findById(user.getId());
+            if (existingUser.isPresent()) {
+                User updatedUser = existingUser.get();
+                updatedUser.setUsername(user.getUsername());
+                updatedUser.setPassword(user.getPassword());
+                updatedUser.setEmail(user.getEmail());
+                updatedUser.setPhone(user.getPhone());
+                updatedUser.setRole(user.getRole());
+                updatedUser.setCreatedAt(user.getCreatedAt());
+                updatedUser.setFullName(user.getFullName());
+                updatedUser.setGender(user.getGender());
+                updatedUser.setDate_of_birth(user.getDate_of_birth());
+                updatedUser.setUpdatedAt(LocalDateTime.now());
+                return authenticationRepository.save(updatedUser);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @Override
+    public ResponseCommon<GetOTPResponse> getOtp(GetOTPRequest request) {
+        try {
+            User user = authenticationRepository.findByEmailAndStatus(request.getEmail(), EnumTypeStatus.ACTIVE).orElse(null);
+            // if  user is null ->throw error
+            if (Objects.isNull(user)) {
+                return new ResponseCommon<>(ResponseCode.USER_NOT_FOUND, null);
+            }
+            // step1: gen otp
+            // if otp of user expried
+            LocalDateTime localDateTime = LocalDateTime.now();
+            String otp = CommonUtils.getOTP();
+            //step2: send email
+            log.info("START... Sending email");
+            emailService.sendEmail(setUpMail(user.getEmail(), otp));
+            log.info("END... Email sent success");
+            if (request.isCreate()) {
+                user.setStatus(EnumTypeStatus.IN_PROCESS);
+            }
+            LocalDateTime expired = localDateTime.plusMinutes(Long.valueOf(otpValid));
+            log.debug("Value of expired{}", expired);
+            user.setExpiredOTP(expired);
+            user.setOtp(otp);
+            User createdUser = authenticationRepository.save(user);
+            GetOTPResponse response = new GetOTPResponse(user.getUsername(), user.getEmail());
+            return new ResponseCommon<>(ResponseCode.SUCCESS, response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseCommon<>(ResponseCode.FAIL, null);
+        }
+    }
+
+    @Override
+    public ResponseCommon<ResendOTPResponse> resendOTP(ResendOTPRequest request) {
+        try {
+            User user = authenticationRepository.findByEmail(request.getEmail()).orElse(null);
+            LocalDateTime localDateTime = LocalDateTime.now();
+            String otp = CommonUtils.getOTP();
+            //step2: send email
+            log.info("START... Sending email");
+            emailService.sendEmail(setUpMail(user.getEmail(),otp));
+            log.info("END... Email sent success");
+            user.setUsername(getUserFromEmail(request.getEmail()));
+
+            LocalDateTime expired = localDateTime.plusMinutes(Long.valueOf(otpValid));
+            log.debug("Value of expired{}",expired);
+            user.setExpiredOTP(expired);
+            user.setOtp(otp);
+            authenticationRepository.save(user);
+            return new ResponseCommon<>(ResponseCode.SUCCESS, null);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseCommon<>(ResponseCode.FAIL, null);
+        }
+    }
+    private Mail setUpMail(String mailTo, String otp) {
+        Mail mail = new Mail();
+        mail.setFrom(sendmail);
+        mail.setTo(mailTo);
+        mail.setSubject("OTP library");
+        Map<String, Object> model = new HashMap<>();
+        model.put("otp_value", otp);
+        mail.setPros(model);
+        mail.setTemplate("templete");
+        return mail;
+    }
 }
