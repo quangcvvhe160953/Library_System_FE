@@ -6,7 +6,6 @@ import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
@@ -24,7 +23,6 @@ public class EmailService {
     private final TemplateEngine templateEngine;
 
     @SneakyThrows
-    @Async
     public void sendEmail(Mail mail) {
         MimeMessage message = sender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED,
@@ -40,3 +38,5 @@ public class EmailService {
         sender.send(message);
     }
 }
+
+

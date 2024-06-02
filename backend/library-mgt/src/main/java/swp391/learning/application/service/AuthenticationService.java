@@ -9,12 +9,10 @@ import swp391.learning.security.jwt.JWTResponse;
 public interface AuthenticationService {
     ResponseCommon<CreateUserResponseDTO> createUser(CreateUserRequest requestDTO);
 
-    String genUserFromEmail(String email);
+    String getUserFromEmail(String email);
+    ResponseCommon<GetUserByEmailResponse> getUserByEmail(GetUserByEmailRequest getUserByEmailRequest);
 
     ResponseCommon<JWTResponse> login(LoginRequest loginRequest);
-
-    ResponseCommon<LogOutResponse> logOut(LogOutRequest logOutRequest);
-
     ResponseCommon<ChangePasswordResponse> changePassword(ChangePasswordRequest changePasswordRequest);
 
     ResponseCommon<VerifyOtpResponse> verifyOtp(VerifyOtpRequest verifyOtpRequest);
@@ -24,5 +22,4 @@ public interface AuthenticationService {
     ResponseCommon<GetOTPResponse> getOtp(GetOTPRequest request);
 
     ResponseCommon<ResendOTPResponse> resendOTP(ResendOTPRequest request);
-
 }

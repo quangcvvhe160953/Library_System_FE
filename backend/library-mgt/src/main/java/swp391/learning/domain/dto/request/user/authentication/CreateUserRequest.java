@@ -23,14 +23,15 @@ public class CreateUserRequest {
     private String email;
     @NotBlank
     private String phone;
+
     private EnumTypeRole role = EnumTypeRole.MEMBER;
-    @NotNull
     private String fullName;
     @NotNull
     private EnumTypeGender gender;
     @NotNull
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
     private LocalDate dateOfBirth;
 
 
 }
+

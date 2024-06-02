@@ -4,10 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import swp391.learning.application.service.AuthenticationService;
 import swp391.learning.domain.dto.common.ResponseCommon;
 import swp391.learning.domain.dto.request.user.authentication.*;
@@ -41,6 +38,21 @@ public class AuthenticationController {
         }
         else {
             return ResponseEntity.badRequest().body(new ResponseCommon<>(responseDTO.getCode(),"Resgister fail",null));
+        }
+    }
+
+    @GetMapping("/get-user-by-email")
+    public ResponseEntity<ResponseCommon<GetUserByEmailResponse>> getUserByEmail(GetUserByEmailRequest request) {
+        ResponseCommon<GetUserByEmailResponse> response = authenticationService.getUserByEmail(request);
+        if (response.getCode() == ResponseCode.SUCCESS.getCode()) {
+            log.debug("Get user by email successfully.");
+            return ResponseEntity.ok(response);
+        } else if (response.getCode() == ResponseCode.USER_NOT_FOUND.getCode()) {
+            log.debug("User not exist.");
+            return ResponseEntity.badRequest().body(new ResponseCommon<>(response.getCode(), "User not exist", null));
+        } else {
+            log.error("Get user by email failed");
+            return ResponseEntity.badRequest().body(new ResponseCommon<>(ResponseCode.FAIL.getCode(), "Get user by email failed", null));
         }
     }
     @PostMapping("/verify-otp")
@@ -85,29 +97,17 @@ public class AuthenticationController {
             return ResponseEntity.badRequest().body(responseDTO);
         }
     }
-
     @PostMapping("/login")
     public ResponseEntity<ResponseCommon<JWTResponse>> login(@RequestBody LoginRequest loginRequest) {
         ResponseCommon<JWTResponse> response = authenticationService.login(loginRequest);
         if (response.getCode() == ResponseCode.SUCCESS.getCode()) {
             return ResponseEntity.ok(response);
-        } else if(response.getCode()==ResponseCode.USER_NOT_FOUND.getCode()){
-            return ResponseEntity.badRequest().body(new ResponseCommon<>(ResponseCode.USER_NOT_FOUND.getCode(),"Account not register in system",null));
-        } else if(response.getCode() ==ResponseCode.PASSWORD_INCORRECT.getCode()){
-            return ResponseEntity.badRequest().body(new ResponseCommon<>(ResponseCode.PASSWORD_INCORRECT.getCode(),"Username or password incorrect",null));
-        }
-        else {
-            return ResponseEntity.badRequest().body(new ResponseCommon<>(ResponseCode.FAIL.getCode(),"Login fail",null));
-        }
-    }
-
-    @PostMapping("/log-out")
-    public ResponseEntity<ResponseCommon<LogOutResponse>> logOut(LogOutRequest logOutRequest){
-        ResponseCommon<LogOutResponse> response = authenticationService.logOut(logOutRequest);
-        if(response.getCode()==ResponseCode.FAIL.getCode()){
-            return ResponseEntity.badRequest().body(new ResponseCommon<>(ResponseCode.FAIL.getCode(),"LogOut fail",null));
+        } else if (response.getCode() == ResponseCode.USER_NOT_FOUND.getCode()) {
+            return ResponseEntity.badRequest().body(new ResponseCommon<>(ResponseCode.USER_NOT_FOUND.getCode(), "Account not register in system", null));
+        } else if (response.getCode() == ResponseCode.PASSWORD_INCORRECT.getCode()) {
+            return ResponseEntity.badRequest().body(new ResponseCommon<>(ResponseCode.PASSWORD_INCORRECT.getCode(), "Username or password incorrect", null));
         } else {
-            return ResponseEntity.ok().body(new ResponseCommon<>(ResponseCode.SUCCESS.getCode(),"LogOut success",response.getData()));
+            return ResponseEntity.badRequest().body(new ResponseCommon<>(ResponseCode.FAIL.getCode(), "Login fail", null));
         }
     }
 
@@ -118,8 +118,7 @@ public class AuthenticationController {
         System.out.println(username);
         if (response.getCode() == ResponseCode.SUCCESS.getCode()) {
             return ResponseEntity.ok(response);
-        }
-        else {
+        } else {
             return ResponseEntity.badRequest().body(response);
         }
     }

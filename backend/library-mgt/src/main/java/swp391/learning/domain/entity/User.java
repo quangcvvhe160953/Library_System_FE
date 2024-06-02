@@ -34,33 +34,33 @@ public class User {
     private String email;
 
     @Column(name = "phone")
-    private String phone; // số điện thoại
+    private String phone;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role")
     private EnumTypeRole role;
 
     @Column(name = "created_at")
-    private LocalDateTime createdAt; // ngày tạo
+    private LocalDateTime createdAt;
 
     @Column(name = "full_name")
-    private String fullName; // tên
+    private String fullName;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "gender")
-    private EnumTypeGender gender; // giới tính
+    private EnumTypeGender gender;
 
     @Column(name = "date_of_birth")
-    private LocalDate date_of_birth; // ngaỳ sinh
+    private LocalDate date_of_birth;
 
     @Enumerated(EnumType.STRING)
-    private EnumTypeStatus status; // các trạng thái của tài khoản 1 đã kích hoạt 2 chưa verify
+    private EnumTypeStatus status;
 
     @Column(name="session_id")
-    private Integer session_id; // thời gian đăng nhập
+    private Integer session_id; // phien de check moi lan dang nhap
 
     @Column(name="updated_at")
-    private LocalDateTime updatedAt; // thời gian cập nhật
+    private LocalDateTime updatedAt;
 
     @Column(name = "otp")
     private String otp; // ma otp

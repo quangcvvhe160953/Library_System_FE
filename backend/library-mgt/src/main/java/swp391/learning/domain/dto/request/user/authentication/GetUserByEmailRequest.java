@@ -1,9 +1,6 @@
 package swp391.learning.domain.dto.request.user.authentication;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import javax.validation.constraints.NotBlank;
 
@@ -11,8 +8,8 @@ import javax.validation.constraints.NotBlank;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class LogOutRequest {
+@ToString
+public class GetUserByEmailRequest {
     @NotBlank
-    private String username;
-
+    private String email;
 }

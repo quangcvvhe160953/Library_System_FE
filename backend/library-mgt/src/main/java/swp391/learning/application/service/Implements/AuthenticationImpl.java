@@ -27,14 +27,13 @@ import java.util.*;
 @RequiredArgsConstructor
 public class AuthenticationImpl implements AuthenticationService {
     private final AuthenticationRepository authenticationRepository;
-    private final EmailService emailService;
     private final PasswordService passwordService;
-    private final Logger log = LoggerFactory.getLogger(AuthenticationService.class);
-
+    private  final EmailService emailService;
     @Value("${mail.sender}")
     private String sendmail;
     @Value("${otp.valid.minutes}")
     private int otpValid;
+    private final Logger log = LoggerFactory.getLogger(AuthenticationService.class);
 
     @Override
     public ResponseCommon<CreateUserResponseDTO> createUser(CreateUserRequest requestDTO) {
@@ -49,9 +48,11 @@ public class AuthenticationImpl implements AuthenticationService {
                 user = new User();
             }
             // Thiết lập thông tin người dùng
-            user.setUsername(genUserFromEmail(requestDTO.getEmail()));
+            user.setUsername(getUserFromEmail(requestDTO.getEmail()));
+
             String hassPass = passwordService.hashPassword(requestDTO.getPassword());
             user.setPassword(hassPass);
+
             user.setEmail(requestDTO.getEmail());
             user.setPhone(requestDTO.getPhone());
             user.setRole(requestDTO.getRole());
@@ -66,7 +67,6 @@ public class AuthenticationImpl implements AuthenticationService {
             responseDTO.setUsername(createdUser.getUsername());
             responseDTO.setEmail(createdUser.getEmail());
             responseDTO.setCreatedAt(createdUser.getCreatedAt());
-
             return new ResponseCommon<>(ResponseCode.SUCCESS, responseDTO);
         } catch (Exception e) {
             log.error("create user fail", e);
@@ -75,7 +75,7 @@ public class AuthenticationImpl implements AuthenticationService {
     }
 
     @Override
-    public String genUserFromEmail(String email) {
+    public String getUserFromEmail(String email) {
         String username = email.substring(0, email.indexOf("@"));
         Random random = new Random();
         StringBuilder randomNumber = new StringBuilder();
@@ -88,9 +88,43 @@ public class AuthenticationImpl implements AuthenticationService {
     }
 
     @Override
+    public ResponseCommon<GetUserByEmailResponse> getUserByEmail(GetUserByEmailRequest getUserByEmailRequest) {
+        try {
+            User user = authenticationRepository.findByEmail(getUserByEmailRequest.getEmail()).orElse(null);
+            // If user in database not exist -> tell user
+            if ( Objects.isNull(user) ) {
+                log.debug("User not exist");
+                return new ResponseCommon<>(ResponseCode.USER_NOT_FOUND.getCode(),"User not exist",null);
+            }
+            else {
+                GetUserByEmailResponse response = new GetUserByEmailResponse();
+
+                response.setId(user.getId());
+                response.setUsername(user.getUsername());
+                response.setEmail(user.getEmail());
+                response.setPhone(user.getPhone());
+                response.setRole(user.getRole());
+                response.setCreatedAt(user.getCreatedAt());
+                response.setFullName(user.getFullName());
+                response.setGender(user.getGender());
+                response.setDate_of_birth(user.getDate_of_birth());
+                response.setStatus(user.getStatus());
+
+                log.debug("Get user by email successfully");
+                return new ResponseCommon<>(ResponseCode.SUCCESS.getCode(), "Get user by email success", response);
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            log.error("Get user by email failed");
+            return new ResponseCommon<>(ResponseCode.FAIL.getCode(),"Get user by email failed",null);
+        }
+    }
+
+    @Override
     public ResponseCommon<JWTResponse> login(LoginRequest loginRequest) {
         try {
-            Optional<User> user = authenticationRepository.findByEmail(loginRequest.getUsername());
+            Optional<User> user = authenticationRepository.findByEmail(loginRequest.getEmail());
             // if username request not found in database -> tell user
             if (user.isEmpty()) {
                 return new ResponseCommon<>(ResponseCode.USER_NOT_FOUND, null);
@@ -106,31 +140,12 @@ public class AuthenticationImpl implements AuthenticationService {
                     String refreshToken = utils.generateRefreshToken(userDetails);
                     user.orElse(null).setSession_id(CommonUtils.getSessionID());
                     authenticationRepository.save(user.get());
-                    return new ResponseCommon<>(new JWTResponse(accessToken, refreshToken, ResponseCode.SUCCESS.getMessage()));
+                    return new ResponseCommon<>(ResponseCode.SUCCESS, new JWTResponse(accessToken, refreshToken, ResponseCode.SUCCESS.getMessage()));
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
             return new ResponseCommon<>(ResponseCode.FAIL, null);
-        }
-    }
-
-
-    @Override
-    public ResponseCommon<LogOutResponse> logOut(LogOutRequest logOutRequest) {
-        try {
-            User user = authenticationRepository.findByUsername(logOutRequest.getUsername()).orElse(null);
-            if (!Objects.isNull(user)) {
-                user.setSession_id(null);
-                authenticationRepository.save(user);
-                return new ResponseCommon<>(ResponseCode.SUCCESS.getCode(), "Logout successful", null);
-            } else {
-                return new ResponseCommon<>(ResponseCode.FAIL.getCode(), "Logout failed", null);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            log.error("Log out failed");
-            return new ResponseCommon<>(ResponseCode.FAIL.getCode(), "Log out failed", null);
         }
     }
 
@@ -145,14 +160,13 @@ public class AuthenticationImpl implements AuthenticationService {
             if (Objects.isNull(user)) {
                 return new ResponseCommon<>(ResponseCode.USER_NOT_FOUND, null);
             } else {
-                String hassPass = passwordService.hashPassword(changePasswordRequest.getNewPassword());
                 // if oldPassword not correct -> tell user
-                if(!passwordService.hashPassword(changePasswordRequest.getOldPassword()).equals(user.getPassword())){
-                    return new ResponseCommon<>(ResponseCode.PASSWORD_INCORRECT,null);
+                if (!changePasswordRequest.getOldPassword().equals(user.getPassword())) {
+                    return new ResponseCommon<>(ResponseCode.PASSWORD_INCORRECT, null);
                 } else {
-                    user.setPassword(hassPass);
+                    user.setPassword(changePasswordRequest.getNewPassword());
                     authenticationRepository.save(user);
-                    return new ResponseCommon<>(ResponseCode.SUCCESS,null);
+                    return new ResponseCommon<>(ResponseCode.SUCCESS, null);
                 }
             }
         } catch (Exception e) {
@@ -254,12 +268,12 @@ public class AuthenticationImpl implements AuthenticationService {
             String otp = CommonUtils.getOTP();
             //step2: send email
             log.info("START... Sending email");
-            emailService.sendEmail(setUpMail(user.getEmail(), otp));
+            emailService.sendEmail(setUpMail(user.getEmail(),otp));
             log.info("END... Email sent success");
-            user.setUsername(genUserFromEmail(request.getEmail()));
+            user.setUsername(getUserFromEmail(request.getEmail()));
 
             LocalDateTime expired = localDateTime.plusMinutes(Long.valueOf(otpValid));
-            log.debug("Value of expired{}", expired);
+            log.debug("Value of expired{}",expired);
             user.setExpiredOTP(expired);
             user.setOtp(otp);
             authenticationRepository.save(user);
@@ -269,7 +283,6 @@ public class AuthenticationImpl implements AuthenticationService {
             return new ResponseCommon<>(ResponseCode.FAIL, null);
         }
     }
-
     private Mail setUpMail(String mailTo, String otp) {
         Mail mail = new Mail();
         mail.setFrom(sendmail);
@@ -278,7 +291,7 @@ public class AuthenticationImpl implements AuthenticationService {
         Map<String, Object> model = new HashMap<>();
         model.put("otp_value", otp);
         mail.setPros(model);
-        mail.setTemplate("index");
+        mail.setTemplate("templete");
         return mail;
     }
 }
