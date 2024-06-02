@@ -1,0 +1,40 @@
+.btnLogin {
+    padding: 0 10px;
+    border-radius: 50px;
+    border: 1px solid #DEDEE1;
+    width: 100px;
+    height: 35px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #000;
+    text-decoration: none;
+    font-size: small;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.btnInfo {
+  padding: 0 10px;
+  border-radius: 50px;
+  border: 1px solid #DEDEE1;
+  width: 100px;
+  height: 35px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #000;
+  text-decoration: none;
+  font-size: small;
+  background-color: #fff;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+/* CSS file */
+/* Loại bỏ hiệu ứng hover cho input và select */
+.form-control:focus,
+.form-select:focus,
+.form-select:hover,
+.form-control:hover {
+  border-color: initial !important;/* Bỏ màu viền khi hover */
+  box-shadow: none !important; /* Bỏ hiệu ứng shadow khi hover */
+}
