@@ -2,6 +2,8 @@ package swp391.learning.controller;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -14,7 +16,9 @@ import swp391.learning.domain.enums.EnumTypeStatus;
 import swp391.learning.domain.enums.ResponseCode;
 import swp391.learning.repository.AuthenticationRepository;
 import swp391.learning.security.SecurityUtils;
+import swp391.learning.security.UserDetailsImpl;
 import swp391.learning.security.jwt.JWTResponse;
+import swp391.learning.security.jwt.JWTUtils;
 
 import javax.validation.Valid;
 
@@ -23,8 +27,12 @@ import javax.validation.Valid;
 @AllArgsConstructor
 @Log4j2
 public class AuthenticationController {
-    private AuthenticationService authenticationService;
-    private AuthenticationRepository authenticationRepository;
+    private final AuthenticationService authenticationService;
+    private final AuthenticationRepository authenticationRepository;
+    private final JWTUtils jwtUtils;
+
+    private static final Logger logger = LoggerFactory.getLogger(AuthenticationController.class);
+
 
     @PostMapping("/register")
     public ResponseEntity<ResponseCommon<CreateUserResponseDTO>> createUser
@@ -45,13 +53,13 @@ public class AuthenticationController {
     public ResponseEntity<ResponseCommon<GetUserByEmailResponse>> getUserByEmail(GetUserByEmailRequest request) {
         ResponseCommon<GetUserByEmailResponse> response = authenticationService.getUserByEmail(request);
         if (response.getCode() == ResponseCode.SUCCESS.getCode()) {
-            log.debug("Get user by email successfully.");
+            logger.debug("Get user by email successfully.");
             return ResponseEntity.ok(response);
         } else if (response.getCode() == ResponseCode.USER_NOT_FOUND.getCode()) {
-            log.debug("User not exist.");
+            logger.debug("User not exist.");
             return ResponseEntity.badRequest().body(new ResponseCommon<>(response.getCode(), "User not exist", null));
         } else {
-            log.error("Get user by email failed");
+            logger.error("Get user by email failed");
             return ResponseEntity.badRequest().body(new ResponseCommon<>(ResponseCode.FAIL.getCode(), "Get user by email failed", null));
         }
     }
@@ -102,12 +110,13 @@ public class AuthenticationController {
         ResponseCommon<JWTResponse> response = authenticationService.login(loginRequest);
         if (response.getCode() == ResponseCode.SUCCESS.getCode()) {
             return ResponseEntity.ok(response);
-        } else if (response.getCode() == ResponseCode.USER_NOT_FOUND.getCode()) {
-            return ResponseEntity.badRequest().body(new ResponseCommon<>(ResponseCode.USER_NOT_FOUND.getCode(), "Account not register in system", null));
-        } else if (response.getCode() == ResponseCode.PASSWORD_INCORRECT.getCode()) {
-            return ResponseEntity.badRequest().body(new ResponseCommon<>(ResponseCode.PASSWORD_INCORRECT.getCode(), "Username or password incorrect", null));
-        } else {
-            return ResponseEntity.badRequest().body(new ResponseCommon<>(ResponseCode.FAIL.getCode(), "Login fail", null));
+        } else if(response.getCode()==ResponseCode.USER_NOT_FOUND.getCode()){
+            return ResponseEntity.badRequest().body(new ResponseCommon<>(ResponseCode.USER_NOT_FOUND.getCode(),"Account not register in system",null));
+        } else if(response.getCode() ==ResponseCode.PASSWORD_INCORRECT.getCode()){
+            return ResponseEntity.badRequest().body(new ResponseCommon<>(ResponseCode.PASSWORD_INCORRECT.getCode(),"Username or password incorrect",null));
+        }
+        else {
+            return ResponseEntity.badRequest().body(new ResponseCommon<>(ResponseCode.FAIL.getCode(),"Login fail",null));
         }
     }
 
@@ -120,6 +129,24 @@ public class AuthenticationController {
             return ResponseEntity.ok(response);
         } else {
             return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    @PostMapping("/refresh-access-token")
+    public ResponseEntity<JWTResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+        String refreshToken = request.getRefreshToken();
+        User user = authenticationRepository.findByEmail(request.getEmail()).orElse(null);
+
+        if (refreshToken.isEmpty() || refreshToken == null) {
+            return ResponseEntity.badRequest().body(null);
+        } else {
+            UserDetailsImpl userDetails = UserDetailsImpl.build(user);
+            String accessToken = jwtUtils.generateAccessToken(userDetails);
+            String newRefreshToken = jwtUtils.generateRefreshToken(userDetails);
+            JWTResponse response = new JWTResponse();
+            response.setAccessToken(accessToken);
+            response.setRefreshToken(newRefreshToken);
+            return ResponseEntity.ok(response);
         }
     }
 }

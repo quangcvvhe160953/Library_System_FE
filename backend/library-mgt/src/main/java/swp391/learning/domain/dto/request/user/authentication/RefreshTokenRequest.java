@@ -2,16 +2,18 @@ package swp391.learning.domain.dto.request.user.authentication;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.validation.constraints.NotBlank;
 
-@Getter
-@Setter
 @AllArgsConstructor
-public class LoginRequest {
+@NoArgsConstructor
+@Setter
+@Getter
+public class RefreshTokenRequest {
     @NotBlank
-    private String username;
+    private String email;
     @NotBlank
-    private String password;
+    private String refreshToken;
 }

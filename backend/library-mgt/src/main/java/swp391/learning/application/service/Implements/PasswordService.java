@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-
 @Service
 @AllArgsConstructor
 public class PasswordService {

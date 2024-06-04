@@ -27,13 +27,14 @@ import java.util.*;
 @RequiredArgsConstructor
 public class AuthenticationImpl implements AuthenticationService {
     private final AuthenticationRepository authenticationRepository;
-    private final PasswordService passwordService;
-    private  final EmailService emailService;
+    private final EmailService emailService;
+    private final PasswordService servicePassword;
+
     @Value("${mail.sender}")
     private String sendmail;
     @Value("${otp.valid.minutes}")
     private int otpValid;
-    private final Logger log = LoggerFactory.getLogger(AuthenticationService.class);
+    private final Logger log = LoggerFactory.getLogger(AuthenticationImpl.class);
 
     @Override
     public ResponseCommon<CreateUserResponseDTO> createUser(CreateUserRequest requestDTO) {
@@ -49,10 +50,8 @@ public class AuthenticationImpl implements AuthenticationService {
             }
             // Thiết lập thông tin người dùng
             user.setUsername(getUserFromEmail(requestDTO.getEmail()));
-
-            String hassPass = passwordService.hashPassword(requestDTO.getPassword());
-            user.setPassword(hassPass);
-
+//            String hassPass = servicePassword.hashPassword(requestDTO.getPassword());
+            user.setPassword(requestDTO.getPassword());
             user.setEmail(requestDTO.getEmail());
             user.setPhone(requestDTO.getPhone());
             user.setRole(requestDTO.getRole());
@@ -61,7 +60,6 @@ public class AuthenticationImpl implements AuthenticationService {
             user.setDate_of_birth(requestDTO.getDateOfBirth());
             user.setCreatedAt(LocalDateTime.now());
             User createdUser = authenticationRepository.save(user);
-
             // Tạo phản hồi
             CreateUserResponseDTO responseDTO = new CreateUserResponseDTO();
             responseDTO.setUsername(createdUser.getUsername());
@@ -124,16 +122,21 @@ public class AuthenticationImpl implements AuthenticationService {
     @Override
     public ResponseCommon<JWTResponse> login(LoginRequest loginRequest) {
         try {
-            Optional<User> user = authenticationRepository.findByEmail(loginRequest.getEmail());
+            Optional<User> user = authenticationRepository.findByEmail(loginRequest.getUsername());
             // if username request not found in database -> tell user
-            if (user.isEmpty()) {
-                return new ResponseCommon<>(ResponseCode.USER_NOT_FOUND, null);
-            } else {// else -> check password
-                String hashPass = passwordService.hashPassword(loginRequest.getPassword());
-                // if password not equals password in database -> return fail
-                if (!user.orElse(null).getPassword().equals(hashPass)) {
+            if(user.isEmpty()){
+                return new ResponseCommon<>(ResponseCode.USER_NOT_FOUND,null);
+            } // else -> check password
+            else {
+                String hashPass = servicePassword.hashPassword(loginRequest.getPassword());
+//                 so sanh pass trong db sai -> return fail
+//                String password = loginRequest.getPassword();
+//                String hashedPassword = user.get().getPassword();
+//                if (!password.equals(hashedPassword)) {
+                if (user.orElse(null).getPassword().equals(hashPass)) {
                     return new ResponseCommon<>(ResponseCode.PASSWORD_INCORRECT, null);
-                } else {// else -> verify otp
+                } // else -> verify otp
+                else {
                     JWTUtils utils = new JWTUtils();
                     UserDetailsImpl userDetails = UserDetailsImpl.build(user.get());
                     String accessToken = utils.generateAccessToken(userDetails);
@@ -143,7 +146,7 @@ public class AuthenticationImpl implements AuthenticationService {
                     return new ResponseCommon<>(ResponseCode.SUCCESS, new JWTResponse(accessToken, refreshToken, ResponseCode.SUCCESS.getMessage()));
                 }
             }
-        } catch (Exception e) {
+        } catch (Exception e){
             e.printStackTrace();
             return new ResponseCommon<>(ResponseCode.FAIL, null);
         }
