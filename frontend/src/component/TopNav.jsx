@@ -65,10 +65,13 @@ const TopNav = () => {
         <Link className="btnLogin" to="/login" >
           Login
         </Link>
-        <NavDropdown className="btnInfo" title="Admin" id="collapsible-nav-dropdown">
+        <Link className="btnLogin" to="/register" >
+          Sign Up
+        </Link>
+        {/* <NavDropdown className="btnInfo" title="Admin" id="collapsible-nav-dropdown">
           <NavDropdown.Item href="#">Profile</NavDropdown.Item>
           <NavDropdown.Item href="#">Logout</NavDropdown.Item>
-        </NavDropdown>
+        </NavDropdown> */}
       </Nav>
     </div>
   );

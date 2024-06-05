@@ -63,7 +63,7 @@ function Login() {
             />
           </Form.Group>
           <div className="forgot-password">
-            <a href="/">Forgot password?</a>
+            <a href="/forgotpassword">Forgot password?</a>
           </div>
           <Form.Group className="mb-3">
             <Button
