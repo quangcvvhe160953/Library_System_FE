@@ -1,4 +1,5 @@
 import "./App.css";
+import Admin from "./page/Admin";
 import ForgotPassword from "./page/ForgotPassword";
 import Home from "./page/Home";
 import Login from "./page/Login";
@@ -19,6 +20,7 @@ function App() {
           <Route path="/verify-status" element={<VerifyStatus />} />
           <Route path="/forgotpassword" element={<ForgotPassword />} />
           <Route path="/resetpassword" element={<ResetPassword/>} />
+          <Route path="/admin/*" element={<Admin/>} />
         </Routes>
       </div>
   );
