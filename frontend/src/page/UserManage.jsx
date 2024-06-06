@@ -4,12 +4,12 @@ import {
   Button,
   Modal,
   Form,
-  Row,
-  Col,
   InputGroup,
   FormControl,
   Alert,
 } from 'react-bootstrap';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 const UserManage = () => {
   const [users, setUsers] = useState([]);
@@ -17,52 +17,70 @@ const UserManage = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [errorMessage, setErrorMessage] = useState(null); // State for error messages
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [dob, setDob] = useState(new Date());
+  const [editDob, setEditDob] = useState(new Date());
 
-  // Sample user data (replace with actual data fetching)
   useEffect(() => {
     const sampleUsers = [
-      { id: 1, username: 'phuc', password: '123', email: 'phuc@example.com', phone: '123-456-7890', fullname: 'Ng Hoang Phuc', gender: 'Male', role: 'Admin' },
-      { id: 2, username: 'vit', password: '456', email: 'vit@example.com', phone: '987-654-3210', fullname: 'Le Van Vit', gender: 'Female', role: 'User' },
+      { id: 1, username: 'phuc', password: '123', email: 'phuc@example.com', phone: '12345678901', fullname: 'Ng Hoang Phuc', gender: 'Male', role: 'Admin', dob: '01/01/1990' },
+      { id: 2, username: 'vit', password: '456', email: 'vit@example.com', phone: '98765432101', fullname: 'Le Van Vit', gender: 'Female', role: 'User', dob: '15/05/1992' },
     ];
     setUsers(sampleUsers);
   }, []);
 
-  // Handle search input change
-  const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
-  };
+  const handleSearchChange = (e) => setSearchQuery(e.target.value);
 
-  // Filter users based on search query
   const filteredUsers = users.filter((user) => {
     const searchTerms = searchQuery.toLowerCase().split(' ');
-    return searchTerms.every((term) => {
-      return (
-        user.username.toLowerCase().includes(term) ||
-        user.fullname.toLowerCase().includes(term) ||
-        user.email.toLowerCase().includes(term)
-      );
-    });
+    return searchTerms.every((term) => user.username.toLowerCase().includes(term) || user.fullname.toLowerCase().includes(term) || user.email.toLowerCase().includes(term));
   });
 
-  // Handle Create Modal
   const handleCreateModalShow = () => {
-    setErrorMessage(null); // Clear error message before opening the modal
+    setErrorMessage(null);
     setShowCreateModal(true);
   };
+
   const handleCreateModalClose = () => setShowCreateModal(false);
 
-  // Handle Edit Modal
   const handleEditModalShow = (user) => {
     setCurrentUser(user);
-    setErrorMessage(null); // Clear error message before opening the modal
+    setErrorMessage(null);
     setShowEditModal(true);
+    setEditDob(new Date(user.dob.split('-').reverse().join('-')));
   };
+
   const handleEditModalClose = () => setShowEditModal(false);
 
-  // Handle Create User
+  const isValidInput = (data) => {
+    const { username, password, email, phone, fullname } = data;
+    const specialCharRegex = /[!@#$%^&*(),.?":{}|<>0-9]/;
+    const spaceRegex = /\s/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^\d{11}$/;
+
+    if (spaceRegex.test(password) || spaceRegex.test(username) || spaceRegex.test(email) || spaceRegex.test(phone)) {
+      setErrorMessage('No spaces are allowed in password, username, email, and phone.');
+      return false;
+    }
+    if (specialCharRegex.test(username) || specialCharRegex.test(fullname)) {
+      setErrorMessage('Username and Full Name cannot contain special characters or numbers.');
+      return false;
+    }
+    if (!emailRegex.test(email)) {
+      setErrorMessage('Invalid email format.');
+      return false;
+    }
+    if (!phoneRegex.test(phone)) {
+      setErrorMessage('Phone number must be 11 digits.');
+      return false;
+    }
+    return true;
+  };
+
   const handleCreateUser = (data) => {
-    // Check for ID and email duplicates
+    if (!isValidInput(data)) return;
+
     if (users.some((user) => user.id === data.id)) {
       setErrorMessage('ID already exists!');
       return;
@@ -73,44 +91,63 @@ const UserManage = () => {
     }
 
     const newId = users.length > 0 ? Math.max(...users.map((user) => user.id)) + 1 : 1;
-    const newUser = { ...data, id: newId };
+    const newUser = { ...data, id: newId, dob: dob.toLocaleDateString('en-GB') };
     setUsers([...users, newUser]);
     setShowCreateModal(false);
   };
 
-  // Handle Update User
   const handleUpdateUser = (data) => {
-    // Check for email duplicates (excluding the current user)
+    if (!isValidInput(data)) return;
+
     if (users.some((user) => user.id !== currentUser.id && user.email.toLowerCase() === data.email.toLowerCase())) {
       setErrorMessage('Email already exists!');
       return;
     }
 
-    const updatedUsers = users.map((user) => {
-      if (user.id === currentUser.id) {
-        return { ...user, ...data };
-      }
-      return user;
-    });
+    const updatedUsers = users.map((user) =>
+      user.id === currentUser.id ? { ...user, ...data, dob: editDob.toLocaleDateString('en-GB') } : user
+    );
     setUsers(updatedUsers);
     setShowEditModal(false);
   };
 
-  // Handle Delete User
   const handleDeleteUser = (id) => {
     const updatedUsers = users.filter((user) => user.id !== id);
     setUsers(updatedUsers);
   };
 
-  // Handle Change Role
-  const handleChangeRole = (id, newRole) => {
-    const updatedUsers = users.map((user) => {
-      if (user.id === id) {
-        return { ...user, role: newRole };
-      }
-      return user;
-    });
-    setUsers(updatedUsers);
+  // Handle form submission for creating a user
+  const handleCreateFormSubmit = (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const newUser = {
+      username: formData.get('username'),
+      password: formData.get('password'),
+      fullname: formData.get('fullname'),
+      email: formData.get('email'),
+      phone: formData.get('phone'),
+      gender: formData.get('gender'),
+      role: formData.get('role'),
+      dob: dob.toLocaleDateString('en-GB'),
+    };
+    handleCreateUser(newUser);
+  };
+
+  // Handle form submission for editing a user
+  const handleEditFormSubmit = (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const updatedUser = {
+      username: formData.get('username'),
+      password: formData.get('password'),
+      fullname: formData.get('fullname'),
+      email: formData.get('email'),
+      phone: formData.get('phone'),
+      gender: formData.get('gender'),
+      role: formData.get('role'),
+      dob: editDob.toLocaleDateString('en-GB'),
+    };
+    handleUpdateUser(updatedUser);
   };
 
   return (
@@ -128,14 +165,11 @@ const UserManage = () => {
       </InputGroup>
 
       {/* Create User Button */}
-      <Button variant="primary" style={{color: 'white', backgroundColor: '#F87555'}} onClick={handleCreateModalShow}>
+      <Button variant="primary" onClick={handleCreateModalShow}>
         Create User
       </Button>
 
-      {/* Error Message (if any) */}
-      {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
-
-      {/* User List Table */}
+      {/* User Table */}
       <Table striped bordered hover className="mt-3">
         <thead>
           <tr>
@@ -144,7 +178,9 @@ const UserManage = () => {
             <th>Full Name</th>
             <th>Email</th>
             <th>Phone</th>
+            <th>Gender</th>
             <th>Role</th>
+            <th>Date of Birth</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -156,11 +192,13 @@ const UserManage = () => {
               <td>{user.fullname}</td>
               <td>{user.email}</td>
               <td>{user.phone}</td>
+              <td>{user.gender}</td>
               <td>{user.role}</td>
+              <td>{user.dob}</td>
               <td>
-                <Button variant="primary" style={ { marginRight: '20px' }} onClick={() => handleEditModalShow(user)}>
+                <Button variant="warning" onClick={() => handleEditModalShow(user)}>
                   Edit
-                </Button>
+                </Button>{' '}
                 <Button variant="danger" onClick={() => handleDeleteUser(user.id)}>
                   Delete
                 </Button>
@@ -171,130 +209,174 @@ const UserManage = () => {
       </Table>
 
       {/* Create User Modal */}
-      <Modal show={showCreateModal} onHide={handleCreateModalClose}>
-        <Modal.Header closeButton>
-          <Modal.Title>Create New User</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form onSubmit={(e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            handleCreateUser(Object.fromEntries(formData));
-          }}>
-            <Row className="mb-3">
-              
-              <Form.Group as={Col} controlId="formGridUsername">
-                <Form.Label>Username</Form.Label>
-                <Form.Control type="text" name="username" required />
-              </Form.Group>
-            </Row>
-            <Row className="mb-3">
-              <Form.Group as={Col} controlId="formGridPassword">
-                <Form.Label>Password</Form.Label>
-                <Form.Control type="password" name="password" required />
-              </Form.Group>
-              <Form.Group as={Col} controlId="formGridEmail">
-                <Form.Label>Email</Form.Label>
-                <Form.Control type="email" name="email" required />
-              </Form.Group>
-            </Row>
-            <Row className="mb-3">
-              <Form.Group as={Col} controlId="formGridPhone">
-                <Form.Label>Phone</Form.Label>
-                <Form.Control type="text" name="phone" required />
-              </Form.Group>
-              <Form.Group as={Col} controlId="formGridFullname">
-                <Form.Label>Full Name</Form.Label>
-                <Form.Control type="text" name="fullname" required />
-              </Form.Group>
-            </Row>
-            <Row className="mb-3">
-              <Form.Group as={Col} controlId="formGridGender">
-                <Form.Label>Gender</Form.Label>
-                <Form.Select name="gender" required>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                </Form.Select>
-              </Form.Group>
-              <Form.Group as={Col} controlId="formGridRole">
-                <Form.Label>Role</Form.Label>
-                <Form.Select name="role" required>
-                  <option value="Admin">Admin</option>
-                  <option value="User">User</option>
-                </Form.Select>
-              </Form.Group>
-            </Row>
-            <Button variant="primary" type="submit">
-              Create
-            </Button>
-          </Form>
-        </Modal.Body>
-      </Modal>
+      <Modal show={showCreateModal} onHide={handleCreateModalClose} centered>
+  <Modal.Header closeButton>
+    <Modal.Title>Create User</Modal.Title>
+  </Modal.Header>
+  <Modal.Body>
+    {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
 
+    <Form onSubmit={handleCreateFormSubmit} className="user-form">
+      {/* Username */}
+      <Form.Group controlId="formUsername">
+        <Form.Label>Username</Form.Label>
+        <Form.Control name="username" type="text" placeholder="Enter username" required />
+      </Form.Group>
+
+      {/* Password */}
+      <Form.Group controlId="formPassword">
+        <Form.Label>Password</Form.Label>
+        <Form.Control name="password" type="password" placeholder="Enter password" required />
+      </Form.Group>
+
+      {/* Full Name */}
+      <Form.Group controlId="formFullname">
+        <Form.Label>Full Name</Form.Label>
+        <Form.Control name="fullname" type="text" placeholder="Enter full name" required />
+      </Form.Group>
+
+      {/* Email */}
+      <Form.Group controlId="formEmail">
+        <Form.Label>Email</Form.Label>
+        <Form.Control name="email" type="email" placeholder="Enter email" required />
+      </Form.Group>
+
+      {/* Phone */}
+      <Form.Group controlId="formPhone">
+        <Form.Label>Phone</Form.Label>
+        <Form.Control name="phone" type="text" placeholder="Enter phone number" required />
+      </Form.Group>
+
+      {/* Date of Birth */}
+      <Form.Group controlId="formDob" style={{ marginTop: '20px', marginBottom: '20px',}}>
+        <Form.Label style={{ marginRight: '10px'}}>Date of Birth</Form.Label>
+        <DatePicker
+          selected={dob}
+          onChange={(date) => setDob(date)}
+          dateFormat="dd-MM-yyyy"
+          className="form-control"
+          required
+        />
+      </Form.Group>
+
+      {/* Gender */}
+      <Form.Group controlId="formGender">
+        <Form.Label>Gender</Form.Label>
+        <Form.Control name="gender" as="select" required>
+          <option value="">Select Gender</option> {/* Add default empty option */}
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+        </Form.Control>
+      </Form.Group>
+
+      {/* Role */}
+      <Form.Group controlId="formRole">
+        <Form.Label>Role</Form.Label>
+        <Form.Control name="role" as="select" required>
+          <option value="">Select Role</option> {/* Add default empty option */}
+          <option value="Admin">Admin</option>
+          <option value="ser">User</option>
+        </Form.Control>
+      </Form.Group>
+
+      <Button variant="primary" type="submit" block> 
+        Create User
+      </Button>
+    </Form>
+  </Modal.Body>
+</Modal>
       {/* Edit User Modal */}
       <Modal show={showEditModal} onHide={handleEditModalClose}>
         <Modal.Header closeButton>
           <Modal.Title>Edit User</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {currentUser && (
-            <Form onSubmit={(e) => {
-              e.preventDefault();
-              const formData = new FormData(e.target);
-              handleUpdateUser(Object.fromEntries(formData));
-            }}>
-              <Row className="mb-3">
-                <Form.Group as={Col} controlId="formGridId">
-                  <Form.Label>ID</Form.Label>
-                  <Form.Control type="number" name="id" defaultValue={currentUser.id} disabled /> {/* Disable ID field for editing */}
-                </Form.Group>
-                <Form.Group as={Col} controlId="formGridUsername">
-                  <Form.Label>Username</Form.Label>
-                  <Form.Control type="text" name="username" defaultValue={currentUser.username} required />
-                </Form.Group>
-              </Row>
-              <Row className="mb-3">
-                <Form.Group as={Col} controlId="formGridPassword">
-                  <Form.Label>Password</Form.Label>
-                  <Form.Control type="password" name="password" defaultValue={currentUser.password} required />
-                </Form.Group>
-                <Form.Group as={Col} controlId="formGridEmail">
-                  <Form.Label>Email</Form.Label>
-                  <Form.Control type="email" name="email" defaultValue={currentUser.email} required />
-                </Form.Group>
-              </Row>
-              <Row className="mb-3">
-                <Form.Group as={Col} controlId="formGridPhone">
-                  <Form.Label>Phone</Form.Label>
-                  <Form.Control type="text" name="phone" defaultValue={currentUser.phone} required />
-                </Form.Group>
-                <Form.Group as={Col} controlId="formGridFullname">
-                  <Form.Label>Full Name</Form.Label>
-                  <Form.Control type="text" name="fullname" defaultValue={currentUser.fullname} required />
-                </Form.Group>
-              </Row>
-              <Row className="mb-3">
-                <Form.Group as={Col} controlId="formGridGender">
-                  <Form.Label>Gender</Form.Label>
-                  <Form.Select name="gender" defaultValue={currentUser.gender} required>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                  </Form.Select>
-                </Form.Group>
-                <Form.Group as={Col} controlId="formGridRole">
-                  <Form.Label>Role</Form.Label>
-                  <Form.Select name="role" defaultValue={currentUser.role} required>
-                    <option value="Admin">Admin</option>
-                    <option value="User">User</option>
-                  </Form.Select>
-                </Form.Group>
-              </Row>
-              <Button variant="primary" type="submit">
-                Update
-              </Button>
-            </Form>
-          )}
+          {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
+          <Form onSubmit={handleEditFormSubmit}>
+            <Form.Group controlId="formUsername">
+              <Form.Label>Username</Form.Label>
+              <Form.Control
+                name="username"
+                type="text"
+                defaultValue={currentUser?.username}
+                placeholder="Enter username"
+                required
+              />
+            </Form.Group>
+            <Form.Group controlId="formPassword">
+              <Form.Label>Password</Form.Label>
+              <Form.Control
+                name="password"
+                type="password"
+                defaultValue={currentUser?.password}
+                placeholder="Enter password"
+                required
+              />
+            </Form.Group>
+            <Form.Group controlId="formFullname">
+              <Form.Label>Full Name</Form.Label>
+              <Form.Control
+                name="fullname"
+                type="text"
+                defaultValue={currentUser?.fullname}
+                placeholder="Enter full name"
+                required
+              />
+            </Form.Group>
+            <Form.Group controlId="formEmail">
+              <Form.Label>Email</Form.Label>
+              <Form.Control
+                name="email"
+                type="email"
+                defaultValue={currentUser?.email}
+                placeholder="Enter email"
+                required
+              />
+            </Form.Group>
+            <Form.Group controlId="formPhone">
+              <Form.Label>Phone</Form.Label>
+              <Form.Control
+                name="phone"
+                type="text"
+                defaultValue={currentUser?.phone}
+                placeholder="Enter phone number"
+                required
+              />
+            </Form.Group>
+            <Form.Group controlId="formDob" style={{ marginTop: '20px', marginBottom: '20px',}}>
+              <Form.Label style={{ marginRight: '10px'}}>Date of Birth</Form.Label>
+              <DatePicker
+                selected={editDob}
+                onChange={(date) => setEditDob(date)}
+                dateFormat="dd-MM-yyyy"
+                className="form-control"
+                required
+              />
+            </Form.Group>
+            <Form.Group controlId="formGender">
+              <Form.Label>Gender</Form.Label>
+              <Form.Control name="gender" as="select" defaultValue={currentUser?.gender} required>
+                <option>Male</option>
+                <option>Female</option>
+              </Form.Control>
+            </Form.Group>
+            <Form.Group controlId="formRole">
+              <Form.Label>Role</Form.Label>
+              <Form.Control name="role" as="select" defaultValue={currentUser?.role} required>
+                <option>Admin</option>
+                <option>User</option>
+              </Form.Control>
+            </Form.Group>
+            <Button variant="primary" type="submit">
+              Update User
+            </Button>
+          </Form>
         </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleEditModalClose}>
+            Close
+          </Button>
+        </Modal.Footer>
       </Modal>
     </div>
   );
