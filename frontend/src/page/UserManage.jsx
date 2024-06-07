@@ -165,7 +165,7 @@ const UserManage = () => {
       </InputGroup>
 
       {/* Create User Button */}
-      <Button variant="primary" onClick={handleCreateModalShow}>
+      <Button variant="primary" style={{color: 'white', backgroundColor: '#F87555'}} onClick={handleCreateModalShow}>
         Create User
       </Button>
 
@@ -196,7 +196,7 @@ const UserManage = () => {
               <td>{user.role}</td>
               <td>{user.dob}</td>
               <td>
-                <Button variant="warning" onClick={() => handleEditModalShow(user)}>
+                <Button variant="primary" onClick={() => handleEditModalShow(user)}>
                   Edit
                 </Button>{' '}
                 <Button variant="danger" onClick={() => handleDeleteUser(user.id)}>
@@ -279,7 +279,7 @@ const UserManage = () => {
         </Form.Control>
       </Form.Group>
 
-      <Button variant="primary" type="submit" block> 
+      <Button variant="primary" type="submit" style={{color: 'white', backgroundColor: '#F87555', marginTop: '10px'}} block> 
         Create User
       </Button>
     </Form>
