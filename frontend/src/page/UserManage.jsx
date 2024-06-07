@@ -24,7 +24,7 @@ const UserManage = () => {
   useEffect(() => {
     const sampleUsers = [
       { id: 1, username: 'phuc', password: '123', email: 'phuc@example.com', phone: '12345678901', fullname: 'Ng Hoang Phuc', gender: 'Male', role: 'Admin', dob: '01/01/1990' },
-      { id: 2, username: 'vit', password: '456', email: 'vit@example.com', phone: '98765432101', fullname: 'Le Van Vit', gender: 'Female', role: 'User', dob: '15/git 05/1992' },
+      { id: 2, username: 'vit', password: '456', email: 'vit@example.com', phone: '98765432101', fullname: 'Le Van Vit', gender: 'Female', role: 'User', dob: '15/05/1992' },
     ];
     setUsers(sampleUsers);
   }, []);
