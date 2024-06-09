@@ -1,0 +1,86 @@
+.book-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 35px; /* Increased gap between book cards */
+    justify-content: center;
+    padding: 60px; /* Added padding around the book-list container */
+  }
+  
+  .book-card {
+    width: 250px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+    background-color: #fff;
+  }
+  
+  .book-card:hover {
+    transform: scale(1.05);
+  }
+  
+  .book-cover {
+    width: 100%;
+    height: auto;
+  }
+  
+  .book-info {
+    padding: 12px;
+    text-align: center;
+  }
+  
+  .book-title {
+    font-size: 14px;
+    margin: 8px 0;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .book-author {
+    color: #666;
+    margin-bottom: 4px;
+    font-size: 12px;
+  }
+  
+  .book-rating {
+    color: #f39c12;
+    margin-bottom: 8px;
+    font-size: 12px;
+  }
+  
+  .book-price {
+    color: #e74c3c;
+    font-weight: bold;
+    font-size: 14px;
+  }
+  
+  .book-status-price {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+  }
+  
+  .book-status {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: bold;
+    color: #fff;
+    font-size: 12px;
+  }
+  
+  .status-in-shelf {
+    background-color: #27ae60;
+  }
+  
+  .status-borrowed {
+    background-color: #2980b9;
+  }
+  
+  .status-ran-out {
+    background-color: #c0392b;
+  }
+  

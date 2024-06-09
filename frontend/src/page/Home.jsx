@@ -1,10 +1,8 @@
-import React from 'react'
+import React from 'react';
 import NavBar from '../component/NavBar';
 import TopNav from '../component/TopNav';
-import {Row, Col } from 'react-bootstrap';
-import { Route, Routes } from 'react-router-dom';
-import Login from './Login';
-
+import { Row, Col } from 'react-bootstrap';
+import ListBook from '../page/ListBook';
 
 const Home = () => {
   return (
@@ -15,10 +13,11 @@ const Home = () => {
             </Col>
             <Col className='col-10'>
               <TopNav />
+              <ListBook />
             </Col> 
         </Row>
     </div>
   )
 }
 
-export default Home
+export default Home;
