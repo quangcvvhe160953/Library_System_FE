@@ -72,7 +72,7 @@ const Register = () => {
         console.log(response);
         if (response.code === 200) {
           localStorage.setItem('emailSignUp', user.email);
-          navigate('/verifyOtp');
+          navigate('/verify');
         } else {
           setErrorMessage(response.message);
           return window.alert(`Sign Up Error: ${response.data.message}`);
