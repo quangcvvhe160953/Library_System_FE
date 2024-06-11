@@ -56,23 +56,22 @@ const SignUp = () => {
     }
     return true;
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (user.password !== user.confirmPassword) {
-      setErrorMessage("Passwords do not match");
-      return;
-    }
+    // if (user.password !== user.confirmPassword) {
+    //   setErrorMessage("Passwords do not match");
+    //   return;
+    // }
 
     if (!isValidInput(user)) return;
 
     try {
-      await axios.post('/api/v1/user/register', {
+      await axios.post('/api/v1/users/register', {
         email: user.email,
         password: user.password,
         phone: user.phone,
         fullName: user.fullName,
-        username: user.username,
+        // username: user.username,
         gender: user.gender,
         dob: user.dob.toLocaleDateString('en-GB'),
       });
@@ -119,7 +118,7 @@ const SignUp = () => {
                   required
                 />
               </Form.Group>
-              <Form.Group className="mb-3">
+              {/* <Form.Group className="mb-3">
                 <Form.Label className="label">Username</Form.Label>
                 <Form.Control
                   className="field-input"
@@ -130,7 +129,7 @@ const SignUp = () => {
                   onChange={handleChange}
                   required
                 />
-              </Form.Group>
+              </Form.Group> */}
               <Form.Group className="mb-3">
                 <Form.Label className="label">Email</Form.Label>
                 <Form.Control
@@ -151,18 +150,6 @@ const SignUp = () => {
                   placeholder="Password"
                   name="password"
                   value={user.password}
-                  onChange={handleChange}
-                  required
-                />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label className="label">Confirm Password</Form.Label>
-                <Form.Control
-                  className="field-input"
-                  type="password"
-                  placeholder="Confirm password"
-                  name="confirmPassword"
-                  value={user.confirmPassword}
                   onChange={handleChange}
                   required
                 />

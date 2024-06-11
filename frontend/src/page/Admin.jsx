@@ -7,7 +7,7 @@ import Dashboard from './Dashboard';
 import UserManage from './UserManage';
 import BookManage from './BookManage';
 import BookRequestManage from './BookRequestManage';
-import TransactionManage from './TransactionManage';
+import BookBorrowManage from './BookBorrowManage';
 
 const Admin = () => {
   const [content, setContent] = useState('dashboard'); // Default content is the Dashboard
@@ -22,8 +22,8 @@ const Admin = () => {
         return <BookManage />;
       case 'bookrequestmanage':
         return <BookRequestManage />;
-      case 'transactionmanage':
-        return <TransactionManage />;
+      case 'bookborrow':
+        return <BookBorrowManage />;
       default:
         return null;
     }

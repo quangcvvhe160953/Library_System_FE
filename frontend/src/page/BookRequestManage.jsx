@@ -92,9 +92,6 @@ const BookRequestManage = () => {
     setSelectedRequest(request);
     setShowModal(true);
   };
-
- 
-
   const handleAcceptRequest = () => {
     const updatedRequests = requests.map((request) => {
       if (request.requestId === selectedRequest.requestId) {

@@ -1,29 +1,27 @@
-import axios from "axios";
+import axiosClient from "../config/AxiosConfig";
 
-const ACCOUNT_BASE_URL = "http://localhost:8081/api/v1/auth/";
 
 const login = (account) => {
-    return axios.post(ACCOUNT_BASE_URL + 'authenticate', account);
+    return axiosClient.post("/api/v1/auth/login" , account);
 }
 
 const getUserInfoByEmail = (email) => {
-    return axios.get(`http://localhost:8081/api/v1/user/by-email/${email}`);
+    return axiosClient.get(`/api/v1/user/by-email/${email}`);
 }
 
 const getAllUser = async () => {
-    return axios.get(`http://localhost:8081/api/v1/user/customer`);
+    return axiosClient.get(`/api/v1/user/customer`);
 }
 
 const changePassword = (data) => {
-    return axios.post("http://localhost:8081/api/v1/auth/change-password", data)
+    return axiosClient.post("/api/v1/auth/change-password", data)
 
 }
-
-const UserService = {  // Create an object to hold all the functions
+const UserService = {  
     login,
     getUserInfoByEmail,
     getAllUser,
     changePassword
 };
 
-export default UserService;  // Export the object as the default
+export default UserService;  

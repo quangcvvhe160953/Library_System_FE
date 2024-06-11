@@ -1,30 +1,48 @@
 import React, { useState } from "react";
-import { Form, Button } from "react-bootstrap";
+import { Form, Button, Alert } from "react-bootstrap";
 import "../assets/style/Login.css";
 import Logo from "../assets/image/logo.png";
 import { Link, useNavigate } from "react-router-dom"; // Import useNavigate
-import axios from 'axios';
-
+import authApi from "../api/AuthAPI";
+import * as jwtDecode from 'jwt-decode';
 function Login() {
+
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const navigate = useNavigate(); // Initialize useNavigate hook
-
+  const [errorMessage, setErrorMessage] = useState(null);
   const handleChange = (e) => {
     const { name, value } = e.target;
     setCredentials({ ...credentials, [name]: value });
   };
 
+  const emailRegex = /^[a-zA-Z0-9]+[@]([a-z]+[.]){1,2}[a-z]+$/;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post("/api/v1/user/login", credentials);
-      localStorage.setItem("email", credentials.email);
-      navigate('/'); // Navigate to the homepage after successful login
+      authApi
+      .login(credentials)
+      .then((response) => {
+        if (response.code === 200) {
+          localStorage.setItem('user-access-token', response.data.accessToken);
+          var decoded = jwtDecode(response.data.accessToken);
+          localStorage.setItem('role', decoded.userInfo[0]);
+          navigate('/');
+          return;
+        } else {
+          setErrorMessage(response.message);
+        }
+      })
+      .catch((error) => {
+        
+        return window.alert('Login Failed');
+        
+      });
     } catch (error) {
-      console.error("There was an error logging in!", error);
+        console.error("There was an error logging in!", error);
+        setErrorMessage("Login failed. Please try again.");
     }
-  };
-
+};
   return (
     <div className="login-container">
       <div className="login">
@@ -37,6 +55,7 @@ function Login() {
             Don't have an account ? <Link to="/register">Register here</Link>
           </div>
         </div>
+        {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-3">
             <Form.Label className="label">Email</Form.Label>
@@ -67,6 +86,7 @@ function Login() {
           </div>
           <Form.Group className="mb-3">
             <Button
+            onClick={handleSubmit}
               className="btn-login"
               type="submit"
               style={{
