@@ -9,7 +9,7 @@ import authApi from "../api/AuthAPI";
 const Verify = () => {
   const [otp, setOtp] = useState("");
   const navigate = useNavigate(); // Khởi tạo hook useNavigate
-  const email = localStorage.getItem("email"); // Giả sử email được lưu trong localStorage khi đăng nhập
+  const email = localStorage.getItem("emailSignUp"); // Giả sử email được lưu trong localStorage khi đăng nhập
 
   const handleChange = (e, index) => {
     const newOtp = otp.slice(0, index) + e.target.value + otp.slice(index + 1);
@@ -23,7 +23,7 @@ const Verify = () => {
           prevInput.focus();
         }
       }
-    } else if (index < 4) {
+    } else if (index < 5) {
       // If a number is entered and the current input is not the last one, focus on the next input
       const nextInput = document.getElementById(`otp-input-${index + 1}`);
       if (nextInput) {
@@ -37,8 +37,9 @@ const Verify = () => {
     e.preventDefault();
     const data = {
       otp,
-      email
+      email : localStorage.getItem("emailSignUp"),
     };
+    console.log(data);
     authApi
       .verifyOTP(data)
       .then((response) => {
@@ -102,7 +103,7 @@ const Verify = () => {
           <Form.Group className="mb-3">
             <Form.Label className="label">Enter your OTP here</Form.Label>
             <div className="input-container">
-              {[...Array(5)].map((_, index) => (
+              {[...Array(6)].map((_, index) => (
                 <Form.Control
                   key={index}
                   id={`otp-input-${index}`}

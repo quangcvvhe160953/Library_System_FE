@@ -164,8 +164,9 @@ const Register = () => {
                   required
                 >
                   <option value="">Select Gender</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
+                  <option value="MALE">Male</option>
+                  <option value="FEMALE">Female</option>
+                  <option value="OTHER">Other</option>
                 </Form.Control>
               </Form.Group>
               <Form.Group className="mb-3 date-picker-container">

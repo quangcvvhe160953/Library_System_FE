@@ -25,8 +25,8 @@ function Login() {
       .then((response) => {
         if (response.code === 200) {
           localStorage.setItem('user-access-token', response.data.accessToken);
-          var decoded = jwtDecode(response.data.accessToken);
-          localStorage.setItem('role', decoded.userInfo[0]);
+          // var decoded = jwtDecode(response.data.accessToken); // check lại chỗ này tại sao cứ đến đây là bị exception
+          // localStorage.setItem('role', decoded.userInfo[0]);
           navigate('/');
           return;
         } else {
