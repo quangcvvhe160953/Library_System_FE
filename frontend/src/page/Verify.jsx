@@ -4,6 +4,7 @@ import "../assets/style/Verify.css";
 import Logo from "../assets/image/logo.png";
 import axios from "axios";
 import { useNavigate } from "react-router-dom"; // Thay thế Redirect bằng useNavigate
+import authApi from "../api/AuthAPI";
 
 const Verify = () => {
   const [otp, setOtp] = useState("");
@@ -32,20 +33,30 @@ const Verify = () => {
   };
 
   const handleSubmit = async (e) => {
-    console.log(otp);
+    
     e.preventDefault();
-    try {
-      const response = await axios.post("/api/v1/user/verify-otp", {
-        email,
-        otp,
+    const data = {
+      otp,
+      email
+    };
+    authApi
+      .verifyOTP(data)
+      .then((response) => {
+        console.log(response);
+        if (response.code === 200) {
+          localStorage.clear('emailSignUp');
+          return navigate('/verify-status');
+        }
+      })
+      .catch((error) => {
+        if (error.response && error.response.data && error.response.data.code === 400) {
+          return window.alert(`OTP error: ${error.response.data.message}`);
+        } else {
+          return window.alert('OTP System Error');
+        }
       });
-      const token = response.data.data.token;
-      localStorage.setItem("token", token);
-      navigate("/verify-status"); // Chuyển hướng về trang xác minh thành công sau khi xác minh OTP thành công
-    } catch (error) {
-      console.error("There was an error verifying the OTP!", error);
-    }
   };
+  
   const [resendOTPTimer, setResendOTPTimer] = useState(120);
   const [isButtonDisabled, setIsButtonDisabled] = useState(true);
 
@@ -61,13 +72,20 @@ const Verify = () => {
     return () => clearInterval(interval);
   }, [resendOTPTimer]);
 
-  const handleResendOtp = async () => {
-    try {
-      await axios.post("/api/v1/user/resendOTP", { email });
-      alert("OTP has been resent to your email");
-    } catch (error) {
-      console.error("There was an error resending the OTP!", error);
-    }
+  const handleResendOtp = () => {
+    authApi
+    .resendOTP(localStorage.getItem('emailSignUp'))
+    .then((response) => {
+      console.log(response);
+      if (response.code === 200) {
+        return window.alert('A new OTP has been sent to your email.');
+      }
+    })
+    .catch((error) => {
+      return window.alert('OTP System error');
+    });
+  setResendOTPTimer(120);
+  setIsButtonDisabled(true);
   };
 
   return (
