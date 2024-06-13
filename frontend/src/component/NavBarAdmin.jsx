@@ -30,9 +30,9 @@ const NavBarAdmin = ({ handleNavClick }) => {
           <i className="bi bi-receipt"></i>
           <span className='mx-2'>Book's Requests</span>
         </NavLink>
-        <NavLink to="/admin/transactionmanage" onClick={() => handleClick('transactionmanage')} className="nav-link" style={{ color: '#8A8A8A', fontSize: '14px', marginBottom: '10px' }}>
-          <i className="bi bi-coin"></i>
-          <span className='mx-2'>Transaction</span>
+        <NavLink to="/admin/bookborrow" onClick={() => handleClick('bookborrow')} className="nav-link" style={{ color: '#8A8A8A', fontSize: '14px', marginBottom: '10px' }}>
+          <i className="bi bi-handbag"></i>
+          <span className='mx-2'>Borrowed Books</span>
         </NavLink>
       </div>
     </Nav>
