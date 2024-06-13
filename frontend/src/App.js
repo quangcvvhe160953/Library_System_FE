@@ -1,3 +1,5 @@
+import React from "react";
+import { Route, Routes } from "react-router-dom";
 import "./App.css";
 import { PasswordProvider } from "./context/PasswordContext";
 import Admin from "./page/Admin";
